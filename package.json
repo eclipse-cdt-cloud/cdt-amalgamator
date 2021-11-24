@@ -1,0 +1,84 @@
+{
+  "name": "cdt-amalgamator",
+  "description": "Amalgamator Debug Adapter from Eclipse CDT",
+  "version": "0.0.1",
+  "publisher": "Eclipse CDT",
+  "author": {
+    "name": "Jonah Graham",
+    "email": "jonah@kichwacoders.com"
+  },
+  "license": "EPL-2.0",
+  "engines": {
+    "vscode": "^1.61.0"
+  },
+  "categories": [
+    "Debuggers"
+  ],
+  "private": true,
+  "scripts": {
+    "build": "tsc -p ./",
+    "lint": "eslint src --ext ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "watch": "tsc -w"
+  },
+  "devDependencies": {
+    "@types/glob": "^7.2.0",
+    "@types/mocha": "^9.0.0",
+    "@types/node": "^16.11.10",
+    "@types/vscode": "^1.62.0",
+    "@typescript-eslint/eslint-plugin": "^5.4.0",
+    "@typescript-eslint/parser": "^5.4.0",
+    "esbuild": "^0.13.15",
+    "eslint": "^8.3.0",
+    "events": "^3.3.0",
+    "typescript": "^4.5.2",
+    "vsce": "^2.5.0",
+    "vscode-debugadapter": "^1.50.0",
+    "vscode-debugadapter-testsupport": "^1.50.0"
+  },
+  "contributes": {
+    "breakpoints": [
+      {
+        "language": "c"
+      },
+      {
+        "language": "cpp"
+      }
+    ],
+    "debuggers": [
+      {
+        "type": "amalgamator",
+        "label": "CDT Amalgamator",
+        "program": "./out/debugAdapter.js",
+        "runtime": "node",
+        "configurationAttributes": {
+          "launch": {
+            "required": [],
+            "properties": {}
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "amalgamator",
+            "request": "launch",
+            "name": "Amalgamator Example"
+          }
+        ],
+        "configurationSnippets": [
+          {
+            "label": "Amalgamator: Launch",
+            "description": "A new configuration for amalgamating multiple debug adapter launches.",
+            "body": {
+              "type": "amalgamator",
+              "request": "launch",
+              "name": "Amalgamator Example"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "extensionDependencies": [
+    "eclipse-cdt.cdt-gdb-vscode"
+  ]
+}

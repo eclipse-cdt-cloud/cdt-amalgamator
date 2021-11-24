@@ -1,0 +1,42 @@
+{
+    "version": "0.2.0",
+    "configurations": [{
+        "type": "amalgamator",
+        "request": "launch",
+        "name": "Amalgamator Example",
+        "XdebugServer": 4711,
+        "verbose": true,
+        "children": [
+            {
+                "debugAdapterRuntime": "node",
+                "debugAdapterExecutable": "/scratch/debug/git/cdt-gdb-vscode/node_modules/cdt-gdb-adapter/dist/debugAdapter.js",          
+                "arguments": {
+                    "type": "gdb",
+                    "request": "launch",
+                    "name": "gdb launch",
+                    "program": "${workspaceFolder}/empty1.exe",
+                    "verbose": false
+                }
+            },
+            {
+                "debugAdapterRuntime": "node",
+                "debugAdapterExecutable": "/scratch/debug/git/cdt-gdb-vscode/node_modules/cdt-gdb-adapter/dist/debugAdapter.js",          
+                "arguments": {
+                    "type": "gdb",
+                    "request": "launch",
+                    "name": "gdb launch",
+                    "program": "${workspaceFolder}/empty2.exe",
+                    "verbose": false
+                }
+            }
+        ]
+    },
+    {
+        "type": "gdb",
+        "request": "launch",
+        "name": "gdb launch",
+        "program": "${workspaceFolder}/empty1.exe",
+        "verbose": true
+    }
+    ]
+}
