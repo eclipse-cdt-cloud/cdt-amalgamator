@@ -10,7 +10,7 @@
             {
                 "name": "proc1",
                 "debugAdapterRuntime": "node",
-                "debugAdapterExecutable": "/scratch/debug/git/cdt-gdb-vscode/node_modules/cdt-gdb-adapter/dist/debugAdapter.js",          
+                "debugAdapterExecutable": "E:/debug/cdt-gdb-vscode/node_modules/cdt-gdb-adapter/dist/debugAdapter.js",
                 "arguments": {
                     "type": "gdb",
                     "request": "launch",
@@ -22,7 +22,7 @@
             {
                 "name": "proc2",
                 "debugAdapterRuntime": "node",
-                "debugAdapterExecutable": "/scratch/debug/git/cdt-gdb-vscode/node_modules/cdt-gdb-adapter/dist/debugAdapter.js",          
+                "debugAdapterExecutable": "E:/debug/cdt-gdb-vscode/node_modules/cdt-gdb-adapter/dist/debugAdapter.js",
                 "arguments": {
                     "type": "gdb",
                     "request": "launch",
