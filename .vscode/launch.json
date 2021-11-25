@@ -12,8 +12,7 @@
 			],
 			"outFiles": [
 				"${workspaceFolder}/dist/**/*.js"
-			],
-			"preLaunchTask": "npm: watch"
+			]
 		},
 		{
 			"name": "Server",
@@ -26,8 +25,7 @@
 			],
 			"outFiles": [
 				"${workspaceFolder}/out/**/*.js"
-			],
-			"preLaunchTask": "npm: compile"
+			]
 		}
 	],
 	"compounds": [
