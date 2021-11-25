@@ -20,6 +20,11 @@ import { DebugClient } from 'vscode-debugadapter-testsupport';
 
 export interface ChildDapArguments {
     /**
+     * User visisble name, used to prefix the thread name returned by child dap
+     */
+    name?: string;
+
+    /**
      * Instead of type/request that VSCode converts to a command using
      * the extension mechanism from the package.json's program settings,
      * the command needs to be fully provided here as runtime/executable.
@@ -83,8 +88,9 @@ export class AmalgamatorSession extends LoggingDebugSession {
 
     protected initializeRequestArgs: (DebugProtocol.InitializeRequestArguments | undefined);
 
-    /* child processes */
+    /* child processes XXX: A type that represents the union of the following datastructures? */
     protected childDaps: DebugClient[] = [];
+    protected childDapNames: string[] = [];
 
     protected breakpointHandles: Handles<[DebugClient, number]> = new Handles();
     protected frameHandles: Handles<[DebugClient, number]> = new Handles();
@@ -129,6 +135,7 @@ export class AmalgamatorSession extends LoggingDebugSession {
             }
             const dc = await this.createChild(child, this.childDaps.length);
             this.childDaps.push(dc);
+            this.childDapNames.push(child.name ? child.name : "");
         }
         this.sendEvent(new InitializedEvent());
         this.sendResponse(response);
@@ -259,7 +266,7 @@ export class AmalgamatorSession extends LoggingDebugSession {
                 r.body.threads.forEach(t => {
                     threads.push({
                         id: clientId,
-                        name: t.name, // XXX: prefix name here with which child this came from? What about the id of the child?
+                        name: `${this.childDapNames[i] ? this.childDapNames[i] + ': ': ''} ${t.name}`, // XXX: prefix name here with which child this came from? What about the id of the child?
                     } as DebugProtocol.Thread);
                     threadMap.set(clientId, [i, t.id]);
                     clientId++;

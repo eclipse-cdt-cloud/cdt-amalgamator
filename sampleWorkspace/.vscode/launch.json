@@ -8,6 +8,7 @@
         "verbose": true,
         "children": [
             {
+                "name": "proc1",
                 "debugAdapterRuntime": "node",
                 "debugAdapterExecutable": "/scratch/debug/git/cdt-gdb-vscode/node_modules/cdt-gdb-adapter/dist/debugAdapter.js",          
                 "arguments": {
@@ -19,6 +20,7 @@
                 }
             },
             {
+                "name": "proc2",
                 "debugAdapterRuntime": "node",
                 "debugAdapterExecutable": "/scratch/debug/git/cdt-gdb-vscode/node_modules/cdt-gdb-adapter/dist/debugAdapter.js",          
                 "arguments": {
