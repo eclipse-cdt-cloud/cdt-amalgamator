@@ -10,7 +10,7 @@
             {
                 "name": "proc1",
                 "debugAdapterRuntime": "node",
-                "debugAdapterExecutable": "E:/debug/cdt-gdb-vscode/node_modules/cdt-gdb-adapter/dist/debugAdapter.js",
+                "debugAdapterExecutable": "E:/debug/cdt-gdb-vscode/node_modules/cdt-gdb-adapter/dist/debugAdapter.js",          
                 "arguments": {
                     "type": "gdb",
                     "request": "launch",
@@ -22,7 +22,7 @@
             {
                 "name": "proc2",
                 "debugAdapterRuntime": "node",
-                "debugAdapterExecutable": "E:/debug/cdt-gdb-vscode/node_modules/cdt-gdb-adapter/dist/debugAdapter.js",
+                "debugAdapterExecutable": "E:/debug/cdt-gdb-vscode/node_modules/cdt-gdb-adapter/dist/debugAdapter.js",          
                 "arguments": {
                     "type": "gdb",
                     "request": "launch",
@@ -36,9 +36,23 @@
     {
         "type": "gdb",
         "request": "launch",
-        "name": "gdb launch",
+        "name": "proc1",
         "program": "${workspaceFolder}/empty1.exe",
         "verbose": true
+    },
+    {
+        "type": "gdb",
+        "request": "launch",
+        "name": "proc2",
+        "program": "${workspaceFolder}/empty2.exe",
+        "verbose": true
+    }      
+    ],
+    "compounds": [
+    {
+        "name": "proc1 + proc2",
+        "configurations": [ "proc1", "proc2" ]
     }
     ]
+        
 }
