@@ -63,9 +63,8 @@ export interface RequestArguments extends DebugProtocol.LaunchRequestArguments {
     children: ChildDapArguments[];
 }
 
-export interface LaunchRequestArguments extends RequestArguments {
-    arguments?: string;
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface LaunchRequestArguments extends RequestArguments {}
 
 export class StoppedEvent extends Event implements DebugProtocol.StoppedEvent {
     public body: {
