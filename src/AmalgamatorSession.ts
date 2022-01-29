@@ -142,24 +142,33 @@ export class AmalgamatorSession extends LoggingDebugSession {
         response: DebugProtocol.LaunchResponse,
         args: LaunchRequestArguments
     ): Promise<void> {
-        logger.setup(
-            args.verbose ? Logger.LogLevel.Verbose : Logger.LogLevel.Warn,
-            args.logFile || false
-        );
+        try {
+            logger.setup(
+                args.verbose ? Logger.LogLevel.Verbose : Logger.LogLevel.Warn,
+                args.logFile || false
+            );
 
-        for (const child of args.children) {
-            if (child.delay) {
-                logger.verbose(
-                    `waiting ${child.delay}ms before starting ${child.debugAdapterRuntime} ${child.debugAdapterExecutable}`
-                );
-                await new Promise((res) => setTimeout(res, child.delay));
+            for (const child of args.children) {
+                if (child.delay) {
+                    logger.verbose(
+                        `waiting ${child.delay}ms before starting ${child.debugAdapterRuntime} ${child.debugAdapterExecutable}`
+                    );
+                    await new Promise((res) => setTimeout(res, child.delay));
+                }
+                const dc = await this.createChild(child, this.childDaps.length);
+                this.childDaps.push(dc);
+                this.childDapNames.push(child.name ? child.name : '');
             }
-            const dc = await this.createChild(child, this.childDaps.length);
-            this.childDaps.push(dc);
-            this.childDapNames.push(child.name ? child.name : '');
+            this.sendEvent(new InitializedEvent());
+            this.sendResponse(response);
+        } catch (err) {
+            // TODO cleanup already done launches
+            this.sendErrorResponse(
+                response,
+                1,
+                err instanceof Error ? err.message : String(err)
+            );
         }
-        this.sendEvent(new InitializedEvent());
-        this.sendResponse(response);
     }
 
     protected async createChild(child: ChildDapArguments, index: number) {

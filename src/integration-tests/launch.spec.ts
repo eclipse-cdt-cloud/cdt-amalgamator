@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *********************************************************************/
 
-// import { expect } from 'chai';
+import { expect } from 'chai';
 import * as path from 'path';
 import { LaunchRequestArguments } from '../AmalgamatorSession';
 import * as cdtgdb from 'cdt-gdb-adapter';
@@ -133,6 +133,44 @@ describe('launch', function () {
                     line: lineTags2['STOP HERE'],
                 },
             ]
+        );
+    });
+
+    it('reports an error when child launch fails', async function () {
+        const errorMessage = await new Promise<Error>((resolve, reject) => {
+            dc.launchRequest({
+                verbose: true,
+                logFile: '/tmp/log/amalgamator.log',
+                children: [
+                    {
+                        name: 'proc1',
+                        debugAdapterRuntime: 'node',
+                        debugAdapterExecutable: path.resolve(
+                            __dirname,
+                            '../../node_modules/cdt-gdb-adapter/dist/debugAdapter.js'
+                        ),
+                        arguments: {
+                            verbose: false,
+                            logFile: '/tmp/log/child1.log',
+                            gdb: gdbPath,
+                            program: '/does/not/exist',
+                            openGdbConsole,
+                        } as cdtgdb.LaunchRequestArguments,
+                    },
+                ],
+            } as LaunchRequestArguments)
+                .then(reject)
+                .catch(resolve);
+        });
+
+        // When launching a remote test gdbserver generates the error which is not exactly the same
+        // as GDB's error
+        expect(errorMessage.message).to.satisfy(
+            (msg: string) =>
+                msg.includes('/does/not/exist') &&
+                (msg.includes('The system cannot find the path specified') ||
+                    msg.includes('No such file or directory') ||
+                    msg.includes('not found'))
         );
     });
 });
