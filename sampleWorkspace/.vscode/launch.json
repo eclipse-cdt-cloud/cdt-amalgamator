@@ -1,58 +1,58 @@
 {
-    "version": "0.2.0",
-    "configurations": [{
-        "type": "amalgamator",
-        "request": "launch",
-        "name": "Amalgamator Example",
-        "XdebugServer": 4711,
-        "verbose": true,
-        "children": [
-            {
-                "name": "proc1",
-                "debugAdapterRuntime": "node",
-                "debugAdapterExecutable": "E:/debug/cdt-gdb-vscode/node_modules/cdt-gdb-adapter/dist/debugAdapter.js",          
-                "arguments": {
-                    "type": "gdb",
-                    "request": "launch",
-                    "name": "gdb launch",
-                    "program": "${workspaceFolder}/empty1.exe",
-                    "verbose": false
-                }
-            },
-            {
-                "name": "proc2",
-                "debugAdapterRuntime": "node",
-                "debugAdapterExecutable": "E:/debug/cdt-gdb-vscode/node_modules/cdt-gdb-adapter/dist/debugAdapter.js",          
-                "arguments": {
-                    "type": "gdb",
-                    "request": "launch",
-                    "name": "gdb launch",
-                    "program": "${workspaceFolder}/empty2.exe",
-                    "verbose": false
-                }
-            }
-        ]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "amalgamator",
+      "request": "launch",
+      "name": "Amalgamator Example",
+      "XdebugServer": 4711,
+      "verbose": true,
+      "children": [
+        {
+          "name": "proc1",
+          "debugAdapterRuntime": "node",
+          "debugAdapterExecutable": "E:/debug/cdt-gdb-vscode/node_modules/cdt-gdb-adapter/dist/debugAdapter.js",
+          "arguments": {
+            "type": "gdb",
+            "request": "launch",
+            "name": "gdb launch",
+            "program": "${workspaceFolder}/empty1.exe",
+            "verbose": false
+          }
+        },
+        {
+          "name": "proc2",
+          "debugAdapterRuntime": "node",
+          "debugAdapterExecutable": "E:/debug/cdt-gdb-vscode/node_modules/cdt-gdb-adapter/dist/debugAdapter.js",
+          "arguments": {
+            "type": "gdb",
+            "request": "launch",
+            "name": "gdb launch",
+            "program": "${workspaceFolder}/empty2.exe",
+            "verbose": false
+          }
+        }
+      ]
     },
     {
-        "type": "gdb",
-        "request": "launch",
-        "name": "proc1",
-        "program": "${workspaceFolder}/empty1.exe",
-        "verbose": true
+      "type": "gdb",
+      "request": "launch",
+      "name": "proc1",
+      "program": "${workspaceFolder}/empty1.exe",
+      "verbose": true
     },
     {
-        "type": "gdb",
-        "request": "launch",
-        "name": "proc2",
-        "program": "${workspaceFolder}/empty2.exe",
-        "verbose": true
-    }      
-    ],
-    "compounds": [
-    {
-        "name": "proc1 + proc2",
-        "configurations": [ "proc1", "proc2" ]
+      "type": "gdb",
+      "request": "launch",
+      "name": "proc2",
+      "program": "${workspaceFolder}/empty2.exe",
+      "verbose": true
     }
-    ]
-        
+  ],
+  "compounds": [
+    {
+      "name": "proc1 + proc2",
+      "configurations": ["proc1", "proc2"]
+    }
+  ]
 }

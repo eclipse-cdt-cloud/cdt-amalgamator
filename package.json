@@ -17,24 +17,28 @@
   "private": true,
   "scripts": {
     "build": "tsc -p ./",
-    "lint": "eslint src --ext ts",
+    "lint": "eslint . --ext .ts,.tsx",
+    "format": "prettier --write .",
+    "format-check": "prettier --check .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "watch": "tsc -w"
   },
   "devDependencies": {
     "@types/glob": "^7.2.0",
-    "@types/mocha": "^9.0.0",
-    "@types/node": "^16.11.10",
-    "@types/vscode": "^1.62.0",
-    "@typescript-eslint/eslint-plugin": "^5.4.0",
-    "@typescript-eslint/parser": "^5.4.0",
-    "esbuild": "^0.13.15",
-    "eslint": "^8.3.0",
+    "@types/mocha": "^9.1.0",
+    "@types/node": "^17.0.13",
+    "@types/vscode": "^1.63.1",
+    "@typescript-eslint/eslint-plugin": "^5.10.1",
+    "@typescript-eslint/parser": "^5.10.1",
+    "@vscode/debugadapter": "^1.50.0",
+    "@vscode/debugadapter-testsupport": "^1.50.0",
+    "esbuild": "^0.14.14",
+    "eslint": "^8.8.0",
+    "eslint-config-prettier": "^8.3.0",
     "events": "^3.3.0",
-    "typescript": "^4.5.2",
-    "vsce": "^2.5.0",
-    "vscode-debugadapter": "^1.50.0",
-    "vscode-debugadapter-testsupport": "^1.50.0"
+    "prettier": "2.5.1",
+    "typescript": "^4.5.5",
+    "vsce": "^2.6.5"
   },
   "contributes": {
     "breakpoints": [

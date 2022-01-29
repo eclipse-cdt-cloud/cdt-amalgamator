@@ -7,13 +7,12 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *********************************************************************/
- import * as process from 'process';
- import { logger } from 'vscode-debugadapter/lib/logger';
- import { AmalgamatorSession } from './AmalgamatorSession';
- 
- process.on('uncaughtException', (err: any) => {
-	 logger.error(JSON.stringify(err));
- });
- 
- AmalgamatorSession.run(AmalgamatorSession);
- 
+import * as process from 'process';
+import { logger } from '@vscode/debugadapter/lib/logger';
+import { AmalgamatorSession } from './AmalgamatorSession';
+
+process.on('uncaughtException', (err: any) => {
+    logger.error(JSON.stringify(err));
+});
+
+AmalgamatorSession.run(AmalgamatorSession);
