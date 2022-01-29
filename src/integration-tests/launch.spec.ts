@@ -173,4 +173,41 @@ describe('launch', function () {
                     msg.includes('not found'))
         );
     });
+
+    it('reports an error when child debug adapter fails to load - missing module', async function () {
+        // TODO: This test fails because we use vscode-debugadapter-node/testSupport/src/debugClient.ts::start to start
+        // the server and that doesn't really handle this case so we'll need something local
+        const errorMessage = await new Promise<Error>((resolve, reject) => {
+            dc.launchRequest({
+                verbose: true,
+                logFile: '/tmp/log/amalgamator.log',
+                children: [
+                    {
+                        name: 'proc1',
+                        debugAdapterRuntime: 'node',
+                        debugAdapterExecutable: path.resolve(
+                            __dirname,
+                            '../../node_modules/cdt-gdb-adapter/dist/does/not/exist'
+                        ),
+                        arguments: {
+                            verbose: false,
+                            logFile: '/tmp/log/child1.log',
+                            gdb: gdbPath,
+                            program: emptyProgram1,
+                            openGdbConsole,
+                        } as cdtgdb.LaunchRequestArguments,
+                    },
+                ],
+            } as LaunchRequestArguments)
+                .then(reject)
+                .catch(resolve);
+        });
+
+        // The specific error message isn't very important and subject
+        // to change.
+        expect(errorMessage.message).to.contain('Child debug adapter exited');
+        // There should be some kind of indication in the error message related back to the
+        // failed launch
+        expect(errorMessage.message).to.contain('does/not/exist');
+    });
 });

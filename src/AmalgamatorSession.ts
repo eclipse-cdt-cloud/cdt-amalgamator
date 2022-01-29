@@ -17,11 +17,9 @@ import {
     LoggingDebugSession,
     Event,
     Handles,
-    //     Handles, OutputEvent, Response, Scope, Source,
-    //     StackFrame, TerminatedEvent, Thread,
 } from '@vscode/debugadapter';
 import { DebugProtocol } from '@vscode/debugprotocol';
-import { DebugClient } from '@vscode/debugadapter-testsupport';
+import { AmalgamatorClient } from './AmalgamatorClient';
 
 export interface ChildDapArguments {
     /**
@@ -100,12 +98,15 @@ export class AmalgamatorSession extends LoggingDebugSession {
         | undefined;
 
     /* child processes XXX: A type that represents the union of the following datastructures? */
-    protected childDaps: DebugClient[] = [];
+    protected childDaps: AmalgamatorClient[] = [];
     protected childDapNames: string[] = [];
 
-    protected breakpointHandles: Handles<[DebugClient, number]> = new Handles();
-    protected frameHandles: Handles<[DebugClient, number]> = new Handles();
-    protected variableHandles: Handles<[DebugClient, number]> = new Handles();
+    protected breakpointHandles: Handles<[AmalgamatorClient, number]> =
+        new Handles();
+    protected frameHandles: Handles<[AmalgamatorClient, number]> =
+        new Handles();
+    protected variableHandles: Handles<[AmalgamatorClient, number]> =
+        new Handles();
 
     constructor() {
         super();
@@ -175,7 +176,7 @@ export class AmalgamatorSession extends LoggingDebugSession {
         logger.verbose(
             `creating debug adapter ${child.debugAdapterRuntime} ${child.debugAdapterExecutable}`
         );
-        const dc = new DebugClient(
+        const dc = new AmalgamatorClient(
             child.debugAdapterRuntime,
             child.debugAdapterExecutable,
             'unused'
