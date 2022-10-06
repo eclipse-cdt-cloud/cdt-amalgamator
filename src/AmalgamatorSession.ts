@@ -432,7 +432,7 @@ export class AmalgamatorSession extends LoggingDebugSession {
         args.frameId = childFrameId;
         const timer = setTimeout(() => {
             response.body = {
-                result: 'Error: could not evalute expression',
+                result: 'Error: could not evaluate expression',
                 variablesReference: 0,
             }
             this.sendResponse(response);
