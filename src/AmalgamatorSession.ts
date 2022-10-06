@@ -428,7 +428,7 @@ export class AmalgamatorSession extends LoggingDebugSession {
     }
     
     protected async evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): Promise<void> {
-        const [childDap, childFrameId] = this.frameHandles.get(args.frameId ? args.frameId : 0);
+        const [childDap, childFrameId] = this.frameHandles.get(args.frameId);
         args.frameId = childFrameId;
         const evaluate = await childDap.evaluateRequest(args);
         response.body = evaluate.body;
