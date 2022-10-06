@@ -53,12 +53,35 @@ export interface ChildDapArguments {
      * This is the request arguments (normally specified in the launch.json)
      */
     arguments: DebugProtocol.LaunchRequestArguments;
+
+    /**
+    * Save the port value to use to start for the next child_process
+    */
+    saveGDBServerPort?: boolean;
+
+    /**
+    * Specify the name of the core needed to get the port
+    */
+    coreName: string;
 }
 
 export interface RequestArguments extends DebugProtocol.LaunchRequestArguments {
     verbose?: boolean;
     logFile?: string;
     children: ChildDapArguments[];
+}
+
+export interface TargetLaunchArguments {
+    /* Target port to connect to, ignored if parameters is set */
+    port?: string;
+}
+
+export interface TargetLaunchRequestArguments extends RequestArguments {
+    target?: TargetLaunchArguments;
+}
+
+export interface LaunchRequestArguments extends RequestArguments {
+    arguments?: string;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -107,6 +130,8 @@ export class AmalgamatorSession extends LoggingDebugSession {
         new Handles();
     protected variableHandles: Handles<[AmalgamatorClient, number]> =
         new Handles();
+
+    protected portNo?: string;
 
     constructor() {
         super();
@@ -235,7 +260,18 @@ export class AmalgamatorSession extends LoggingDebugSession {
 
         await dc.start();
         await dc.initializeRequest(this.initializeRequestArgs);
+        if (child.saveGDBServerPort) {
+            if (this.portNo) {
+                if (child.arguments.target) {
+                    /* Save the obtained port to target.port to run for the next child_process */
+                    child.arguments.target.port = (parseInt(this.portNo) + 1).toString();
+                }
+            }
+        }
         await dc.launchRequest(child.arguments);
+        /* Send customRequest to the renesas-gdb-adapter to get port.*/
+        const childResponse = await dc.customRequest('renesas/get_gdbserver_port', child.coreName);
+        this.portNo = childResponse.body;
         return dc;
     }
 
