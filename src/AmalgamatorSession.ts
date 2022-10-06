@@ -430,7 +430,16 @@ export class AmalgamatorSession extends LoggingDebugSession {
     protected async evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): Promise<void> {
         const [childDap, childFrameId] = this.frameHandles.get(args.frameId);
         args.frameId = childFrameId;
+        const timer = setTimeout(() => {
+            response.body = {
+                result: 'Error: could not evalute expression',
+                variablesReference: 0,
+            }
+            this.sendResponse(response);
+            clearTimeout(timer);
+        }, 100);
         const evaluate = await childDap.evaluateRequest(args);
+        clearTimeout(timer);
         response.body = evaluate.body;
         this.sendResponse(response);
     }
