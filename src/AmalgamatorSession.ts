@@ -433,10 +433,14 @@ export class AmalgamatorSession extends LoggingDebugSession {
             variablesReference: 0,
         };
         if (args.frameId) {
-            const [childDap, childFrameId] = this.frameHandles.get(args.frameId);
-            args.frameId = childFrameId;
-            const evaluate = await childDap.evaluateRequest(args);
-            response.body = evaluate.body;
+            try {
+                const [childDap, childFrameId] = this.frameHandles.get(args.frameId);
+                args.frameId = childFrameId;
+                const evaluate = await childDap.evaluateRequest(args);
+                response.body = evaluate.body;
+            } catch (err) {
+                //Do nothing
+            }
         }
         this.sendResponse(response);
     }
