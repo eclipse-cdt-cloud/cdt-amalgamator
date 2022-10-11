@@ -428,17 +428,27 @@ export class AmalgamatorSession extends LoggingDebugSession {
     }
     
     protected async evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): Promise<void> {
-        response.body = {
-            result: 'Error: could not evaluate expression',
-            variablesReference: 0,
-        };
         if (args.frameId) {
-            const [childDap, childFrameId] = this.frameHandles.get(args.frameId);
-            args.frameId = childFrameId;
-            const evaluate = await childDap.evaluateRequest(args);
-            response.body = evaluate.body;
+            try {
+                const [childDap, childFrameId] = this.frameHandles.get(args.frameId);
+                args.frameId = childFrameId;
+                const evaluate = await childDap.evaluateRequest(args);
+                response.body = evaluate.body;
+                this.sendResponse(response);
+            } catch (err) {
+                this.sendErrorResponse(
+                    response,
+                    1,
+                    err instanceof Error ? err.message : String(err)
+                );
+            }
+        } else {
+            this.sendErrorResponse(
+                response,
+                1,
+                'Cannot get evaluate expression'
+            );
         }
-        this.sendResponse(response);
     }
 
     protected async nextRequest(
