@@ -50,6 +50,16 @@ export interface ChildDapArguments {
     delay?: number;
 
     /**
+    * Save the port value to use to start for the next child_process
+    */
+    getServerPort?: boolean;
+
+    /**
+    * This is the request arguments to get port
+    */
+    argGetPort?: string;
+
+    /**
      * This is the request arguments (normally specified in the launch.json)
      */
     arguments: DebugProtocol.LaunchRequestArguments;
@@ -100,6 +110,8 @@ export class AmalgamatorSession extends LoggingDebugSession {
     /* child processes XXX: A type that represents the union of the following datastructures? */
     protected childDaps: AmalgamatorClient[] = [];
     protected childDapNames: string[] = [];
+    protected isPortNo?: boolean;
+    protected portNo?: string;
 
     protected breakpointHandles: Handles<[AmalgamatorClient, number]> =
         new Handles();
@@ -235,7 +247,22 @@ export class AmalgamatorSession extends LoggingDebugSession {
 
         await dc.start();
         await dc.initializeRequest(this.initializeRequestArgs);
-        await dc.launchRequest(child.arguments);
+        if (child.getServerPort) {
+            if (!this.isPortNo) {
+                await dc.launchRequest(child.arguments);
+                const childResponse = await dc.customRequest(
+                    'get_gdbserver_port',
+                    { arg1: child.argGetPort }
+                );
+                this.portNo = childResponse.body;
+                this.isPortNo = true;
+            } else {
+                await dc.customRequest('send_gdbserver_port', this.portNo);
+                await dc.attachRequest(child.arguments);
+            }
+        } else {
+            await dc.launchRequest(child.arguments);
+        }
         return dc;
     }
 
