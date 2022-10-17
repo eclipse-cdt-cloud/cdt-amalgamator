@@ -71,4 +71,9 @@ export class AmalgamatorClient extends DebugClient {
             });
         }
     }
+    public disassembleRequest(
+        args: DebugProtocol.DisassembleArguments
+    ): Promise<DebugProtocol.DisassembleResponse> {
+        return this.send('disassemble', args);
+    }
 }
