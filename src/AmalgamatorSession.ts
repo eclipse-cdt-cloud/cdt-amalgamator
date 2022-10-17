@@ -107,7 +107,8 @@ export class AmalgamatorSession extends LoggingDebugSession {
         new Handles();
     protected variableHandles: Handles<[AmalgamatorClient, number]> =
         new Handles();
-
+    protected disassembleHandles: Handles<[AmalgamatorClient, string]> =
+        new Handles();
     constructor() {
         super();
         this.logger = logger;
@@ -382,10 +383,14 @@ export class AmalgamatorSession extends LoggingDebugSession {
         const childResponse = await childDap.stackTraceRequest(args);
         const frames = childResponse.body.stackFrames;
         // XXX: When does frameHandles get reset as we don't have a "stopped all"
-        frames.forEach(
-            (frame) =>
-                (frame.id = this.frameHandles.create([childDap, frame.id]))
-        );
+        frames.forEach((frame) => {
+            frame.id = this.frameHandles.create([childDap, frame.id]);
+            if (frame.instructionPointerReference) {
+                frame.instructionPointerReference = this.disassembleHandles
+                    .create([childDap, frame.instructionPointerReference])
+                    .toString();
+            }
+        });
         response.body = childResponse.body;
         this.sendResponse(response);
     }
@@ -449,6 +454,24 @@ export class AmalgamatorSession extends LoggingDebugSession {
                 'Cannot get evaluate expression'
             );
         }
+    }
+
+    protected async disassembleRequest(
+        response: DebugProtocol.DisassembleResponse,
+        args: DebugProtocol.DisassembleArguments
+    ): Promise<void> {
+        response.body = {
+            instructions: [],
+        };
+        if (args.memoryReference) {
+            const [childDap, memoryReference] = this.disassembleHandles.get(
+                parseInt(args.memoryReference)
+            );
+            args.memoryReference = memoryReference;
+            const disassemble = await childDap.disassembleRequest(args);
+            response.body = disassemble.body;
+        }
+        this.sendResponse(response);
     }
 
     protected async nextRequest(
