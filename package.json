@@ -69,12 +69,22 @@
           "launch": {
             "required": [],
             "properties": {}
+          },
+          "attach": {
+            "required": [],
+            "properties": {}
           }
         },
         "initialConfigurations": [
           {
             "type": "amalgamator",
-            "request": "launch",
+            "request": {
+              "type": "string",
+              "enum": [
+                "launch",
+                "attach"
+              ]
+            },
             "name": "Amalgamator Example"
           }
         ],
@@ -84,7 +94,13 @@
             "description": "A new configuration for amalgamating multiple debug adapter launches.",
             "body": {
               "type": "amalgamator",
-              "request": "launch",
+              "request": {
+                "type": "string",
+                "enum": [
+                  "launch",
+                  "attach"
+                ]
+              },
               "name": "Amalgamator Example"
             }
           }
