@@ -15,12 +15,8 @@ import { logger } from '@vscode/debugadapter/lib/logger';
 
 export class AmalgamatorClient extends DebugClient {
     private clientExited = false;
-    private ChildDapIndex = 0;
     // There should not be any error output from a client - any error is probably fatal.
     private errorOutput = '';
-    public getChildDapIndex() {
-        return this.ChildDapIndex;
-    }
     public hasClientExited() {
         return this.clientExited;
     }
