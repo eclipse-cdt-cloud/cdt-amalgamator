@@ -100,7 +100,7 @@ export class AmalgamatorSession extends LoggingDebugSession {
     /* child processes XXX: A type that represents the union of the following datastructures? */
     protected childDaps: AmalgamatorClient[] = [];
     protected childDapNames: string[] = [];
-
+    protected childDapIndex = 0;
     protected breakpointHandles: Handles<[AmalgamatorClient, number]> =
         new Handles();
     protected frameHandles: Handles<[AmalgamatorClient, number]> =
@@ -233,7 +233,7 @@ export class AmalgamatorSession extends LoggingDebugSession {
                 });
             }
         });
-
+        this.childDapIndex = index;
         await dc.start();
         await dc.initializeRequest(this.initializeRequestArgs);
         await dc.launchRequest(child.arguments);
@@ -379,6 +379,7 @@ export class AmalgamatorSession extends LoggingDebugSession {
     ): Promise<void> {
         const [childIndex, childId] = await this.getThreadInfo(args.threadId);
         args.threadId = childId;
+        this.childDapIndex = childIndex;
         const childDap = this.childDaps[childIndex];
         const childResponse = await childDap.stackTraceRequest(args);
         const frames = childResponse.body.stackFrames;
@@ -387,7 +388,10 @@ export class AmalgamatorSession extends LoggingDebugSession {
             frame.id = this.frameHandles.create([childDap, frame.id]);
             if (frame.instructionPointerReference) {
                 frame.instructionPointerReference = this.disassembleHandles
-                    .create([childDap, frame.instructionPointerReference])
+                    .create([
+                        childDap,
+                        childIndex + ':' + frame.instructionPointerReference,
+                    ])
                     .toString();
             }
         });
@@ -431,11 +435,16 @@ export class AmalgamatorSession extends LoggingDebugSession {
         response.body = variables.body;
         this.sendResponse(response);
     }
-    
-    protected async evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): Promise<void> {
+
+    protected async evaluateRequest(
+        response: DebugProtocol.EvaluateResponse,
+        args: DebugProtocol.EvaluateArguments
+    ): Promise<void> {
         if (args.frameId) {
             try {
-                const [childDap, childFrameId] = this.frameHandles.get(args.frameId);
+                const [childDap, childFrameId] = this.frameHandles.get(
+                    args.frameId
+                );
                 args.frameId = childFrameId;
                 const evaluate = await childDap.evaluateRequest(args);
                 response.body = evaluate.body;
@@ -463,12 +472,19 @@ export class AmalgamatorSession extends LoggingDebugSession {
         response.body = {
             instructions: [],
         };
-        if (args.memoryReference) {
-            const [childDap, memoryReference] = this.disassembleHandles.get(
+        if (args.memoryReference.indexOf('0x') === -1) {
+            const [, memoryReference] = this.disassembleHandles.get(
                 parseInt(args.memoryReference)
             );
-            args.memoryReference = memoryReference;
-            const disassemble = await childDap.disassembleRequest(args);
+            args.memoryReference = memoryReference.split(':')[1];
+            const disassemble = await this.childDaps[
+                parseInt(memoryReference.split(':')[0])
+            ].disassembleRequest(args);
+            response.body = disassemble.body;
+        } else {
+            const disassemble = await this.childDaps[
+                this.childDapIndex
+            ].disassembleRequest(args);
             response.body = disassemble.body;
         }
         this.sendResponse(response);
