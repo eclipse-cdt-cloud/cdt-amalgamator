@@ -386,14 +386,8 @@ export class AmalgamatorSession extends LoggingDebugSession {
         // XXX: When does frameHandles get reset as we don't have a "stopped all"
         frames.forEach((frame) => {
             frame.id = this.frameHandles.create([childDap, frame.id]);
-            if (frame.instructionPointerReference) {
-                frame.instructionPointerReference = this.disassembleHandles
-                    .create([
-                        childDap,
-                        childIndex + ':' + frame.instructionPointerReference,
-                    ])
-                    .toString();
-            }
+            frame.instructionPointerReference =
+                childIndex + ':' + frame.instructionPointerReference;
         });
         response.body = childResponse.body;
         this.sendResponse(response);
@@ -469,25 +463,47 @@ export class AmalgamatorSession extends LoggingDebugSession {
         response: DebugProtocol.DisassembleResponse,
         args: DebugProtocol.DisassembleArguments
     ): Promise<void> {
-        response.body = {
-            instructions: [],
-        };
-        if (args.memoryReference.indexOf('0x') === -1) {
-            const [, memoryReference] = this.disassembleHandles.get(
-                parseInt(args.memoryReference)
-            );
-            args.memoryReference = memoryReference.split(':')[1];
-            const disassemble = await this.childDaps[
-                parseInt(memoryReference.split(':')[0])
-            ].disassembleRequest(args);
-            response.body = disassemble.body;
+        if (args.memoryReference) {
+            response.body = {
+                instructions: [],
+            };
+            if (args.memoryReference.indexOf(':') !== -1) {
+                try {
+                    this.childDapIndex = parseInt(
+                        args.memoryReference.split(':')[0]
+                    );
+                    args.memoryReference = args.memoryReference.split(':')[1];
+                    const disassemble = await this.childDaps[
+                        this.childDapIndex
+                    ].disassembleRequest(args);
+                    response.body = disassemble.body;
+                    this.sendResponse(response);
+                } catch (err) {
+                    this.sendErrorResponse(
+                        response,
+                        1,
+                        err instanceof Error ? err.message : String(err)
+                    );
+                }
+            } else if (args.memoryReference.indexOf('0x') !== -1) {
+                // Send disassemble request when scrolling disassembly view to a new address that do not have disassembled data yet
+                try {
+                    const disassemble = await this.childDaps[
+                        this.childDapIndex
+                    ].disassembleRequest(args);
+                    response.body = disassemble.body;
+                    this.sendResponse(response);
+                } catch (err) {
+                    this.sendErrorResponse(
+                        response,
+                        1,
+                        err instanceof Error ? err.message : String(err)
+                    );
+                }
+            }
         } else {
-            const disassemble = await this.childDaps[
-                this.childDapIndex
-            ].disassembleRequest(args);
-            response.body = disassemble.body;
+            this.sendErrorResponse(response, 1, 'Cannot get disassembled data');
         }
-        this.sendResponse(response);
     }
 
     protected async nextRequest(
