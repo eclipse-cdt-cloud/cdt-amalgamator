@@ -17,7 +17,7 @@ export class AmalgamatorClient extends DebugClient {
     private clientExited = false;
     // There should not be any error output from a client - any error is probably fatal.
     private errorOutput = '';
-   
+
     public hasClientExited() {
         return this.clientExited;
     }
