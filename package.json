@@ -34,7 +34,7 @@
     "@typescript-eslint/eslint-plugin": "^5.10.1",
     "@typescript-eslint/parser": "^5.10.1",
     "@vscode/debugadapter": "^1.50.0",
-    "@vscode/debugadapter-testsupport": "^1.50.0",
+    "@vscode/debugadapter-testsupport": "^1.58.0-pre.0",
     "cdt-gdb-adapter": "^0.0.15-next",
     "chai": "^4.3.6",
     "cross-env": "^7.0.3",
