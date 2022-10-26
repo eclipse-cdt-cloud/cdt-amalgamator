@@ -114,8 +114,7 @@ export class AmalgamatorSession extends LoggingDebugSession {
         new Handles();
     protected variableHandles: Handles<[AmalgamatorClient, number]> =
         new Handles();
-    protected disassembleHandles: Handles<[AmalgamatorClient, string]> =
-        new Handles();
+
     constructor() {
         super();
         this.logger = logger;
@@ -461,6 +460,7 @@ export class AmalgamatorSession extends LoggingDebugSession {
         response.body = variables.body;
         this.sendResponse(response);
     }
+
     protected async evaluateRequest(
         response: DebugProtocol.EvaluateResponse,
         args: DebugProtocol.EvaluateArguments
