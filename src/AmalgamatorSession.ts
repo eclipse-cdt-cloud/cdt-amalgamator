@@ -50,9 +50,16 @@ export interface ChildDapArguments {
     delay?: number;
 
     /**
+     * Specify launch or attach request to start debugging for children
+     */
+    request?: string;
+
+    /**
      * This is the request arguments (normally specified in the launch.json)
      */
-    arguments: DebugProtocol.LaunchRequestArguments;
+    arguments:
+        | DebugProtocol.LaunchRequestArguments
+        | DebugProtocol.AttachRequestArguments;
 }
 
 export interface RequestArguments extends DebugProtocol.LaunchRequestArguments {
@@ -173,7 +180,10 @@ export class AmalgamatorSession extends LoggingDebugSession {
         }
     }
 
-    protected async createChild(child: ChildDapArguments, index: number) {
+    protected async startAmalgamatorClient(
+        child: ChildDapArguments,
+        index: number
+    ) {
         logger.verbose(
             `creating debug adapter ${child.debugAdapterRuntime} ${child.debugAdapterExecutable}`
         );
@@ -236,7 +246,16 @@ export class AmalgamatorSession extends LoggingDebugSession {
         this.childDapIndex = index;
         await dc.start();
         await dc.initializeRequest(this.initializeRequestArgs);
-        await dc.launchRequest(child.arguments);
+        return dc;
+    }
+
+    protected async createChild(child: ChildDapArguments, index: number) {
+        const dc = await this.startAmalgamatorClient(child, index);
+        if (child.request === 'attach') {
+            await dc.attachRequest(child.arguments);
+        } else {
+            await dc.launchRequest(child.arguments);
+        }
         return dc;
     }
 
@@ -430,6 +449,18 @@ export class AmalgamatorSession extends LoggingDebugSession {
         this.sendResponse(response);
     }
 
+    protected async setVariableRequest(
+        response: DebugProtocol.SetVariableResponse,
+        args: DebugProtocol.SetVariableArguments
+    ): Promise<void> {
+        const [childDap, childVariablesReference] = this.variableHandles.get(
+            args.variablesReference
+        );
+        args.variablesReference = childVariablesReference;
+        const variables = await childDap.setVariableRequest(args);
+        response.body = variables.body;
+        this.sendResponse(response);
+    }
     protected async evaluateRequest(
         response: DebugProtocol.EvaluateResponse,
         args: DebugProtocol.EvaluateArguments
