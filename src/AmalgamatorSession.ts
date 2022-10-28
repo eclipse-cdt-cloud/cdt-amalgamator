@@ -106,8 +106,12 @@ export class AmalgamatorSession extends LoggingDebugSession {
 
     /* child processes XXX: A type that represents the union of the following datastructures? */
     protected childDaps: AmalgamatorClient[] = [];
+    protected addressMap: Map<number, [string, string, string]> = new Map<
+        number,
+        [string, string, string]
+    >();
     protected childDapNames: string[] = [];
-    protected childDapIndex = 0;
+    protected childDapIndex?: number;
     protected breakpointHandles: Handles<[AmalgamatorClient, number]> =
         new Handles();
     protected frameHandles: Handles<[AmalgamatorClient, number]> =
@@ -242,7 +246,7 @@ export class AmalgamatorSession extends LoggingDebugSession {
                 });
             }
         });
-        this.childDapIndex = index;
+
         await dc.start();
         await dc.initializeRequest(this.initializeRequestArgs);
         return dc;
@@ -397,15 +401,19 @@ export class AmalgamatorSession extends LoggingDebugSession {
     ): Promise<void> {
         const [childIndex, childId] = await this.getThreadInfo(args.threadId);
         args.threadId = childId;
-        this.childDapIndex = childIndex;
         const childDap = this.childDaps[childIndex];
         const childResponse = await childDap.stackTraceRequest(args);
         const frames = childResponse.body.stackFrames;
         // XXX: When does frameHandles get reset as we don't have a "stopped all"
         frames.forEach((frame) => {
             frame.id = this.frameHandles.create([childDap, frame.id]);
-            frame.instructionPointerReference =
-                childIndex + ':' + frame.instructionPointerReference;
+            if (frame.instructionPointerReference) {
+                this.addressMap.set(childIndex, [
+                    frame.instructionPointerReference,
+                    this.addressMap.get(childIndex)?.[1] as string,
+                    this.addressMap.get(childIndex)?.[2] as string,
+                ]);
+            }
         });
         response.body = childResponse.body;
         this.sendResponse(response);
@@ -498,39 +506,42 @@ export class AmalgamatorSession extends LoggingDebugSession {
             response.body = {
                 instructions: [],
             };
-            if (args.memoryReference.indexOf(':') !== -1) {
-                try {
-                    this.childDapIndex = parseInt(
-                        args.memoryReference.split(':')[0]
-                    );
-                    args.memoryReference = args.memoryReference.split(':')[1];
-                    const disassemble = await this.childDaps[
-                        this.childDapIndex
-                    ].disassembleRequest(args);
-                    response.body = disassemble.body;
-                    this.sendResponse(response);
-                } catch (err) {
-                    this.sendErrorResponse(
-                        response,
-                        1,
-                        err instanceof Error ? err.message : String(err)
-                    );
-                }
-            } else if (args.memoryReference.indexOf('0x') !== -1) {
-                // Send disassemble request when scrolling disassembly view to a new address that do not have disassembled data yet
-                try {
-                    const disassemble = await this.childDaps[
-                        this.childDapIndex
-                    ].disassembleRequest(args);
-                    response.body = disassemble.body;
-                    this.sendResponse(response);
-                } catch (err) {
-                    this.sendErrorResponse(
-                        response,
-                        1,
-                        err instanceof Error ? err.message : String(err)
-                    );
-                }
+            try {
+                this.addressMap.forEach(
+                    (
+                        [instructionPointerReference, startAdress, endAddress],
+                        childDapID
+                    ) => {
+                        if (
+                            args.memoryReference ===
+                                instructionPointerReference ||
+                            args.memoryReference === startAdress ||
+                            args.memoryReference === endAddress
+                        ) {
+                            this.childDapIndex = childDapID;
+                        }
+                    }
+                );
+                const disassemble = await this.childDaps[
+                    this.childDapIndex as number
+                ].disassembleRequest(args);
+                response.body = disassemble.body;
+                this.addressMap.set(this.childDapIndex as number, [
+                    this.addressMap.get(
+                        this.childDapIndex as number
+                    )?.[0] as string,
+                    disassemble.body?.instructions[0].address as string,
+                    disassemble.body?.instructions[
+                        disassemble.body?.instructions.length - 1
+                    ].address as string,
+                ]);
+                this.sendResponse(response);
+            } catch (err) {
+                this.sendErrorResponse(
+                    response,
+                    1,
+                    err instanceof Error ? err.message : String(err)
+                );
             }
         } else {
             this.sendErrorResponse(response, 1, 'Cannot get disassembled data');
