@@ -106,10 +106,10 @@ export class AmalgamatorSession extends LoggingDebugSession {
 
     /* child processes XXX: A type that represents the union of the following datastructures? */
     protected childDaps: AmalgamatorClient[] = [];
-    protected addressMap: Map<number, [string, string, string]> = new Map<
-        number,
-        [string, string, string]
-    >();
+    /**
+     * This is a map of the start/end addresses or the instructionPointerReference that client see -> child DAP index, child DAP addresses
+     */
+    protected addressMap: Map<string, number> = new Map<string, number>();
     protected childDapNames: string[] = [];
     protected childDapIndex?: number;
     protected breakpointHandles: Handles<[AmalgamatorClient, number]> =
@@ -408,11 +408,10 @@ export class AmalgamatorSession extends LoggingDebugSession {
         frames.forEach((frame) => {
             frame.id = this.frameHandles.create([childDap, frame.id]);
             if (frame.instructionPointerReference) {
-                this.addressMap.set(childIndex, [
+                this.addressMap.set(
                     frame.instructionPointerReference,
-                    this.addressMap.get(childIndex)?.[1] as string,
-                    this.addressMap.get(childIndex)?.[2] as string,
-                ]);
+                    childIndex
+                );
             }
         });
         response.body = childResponse.body;
@@ -507,35 +506,39 @@ export class AmalgamatorSession extends LoggingDebugSession {
                 instructions: [],
             };
             try {
-                this.addressMap.forEach(
-                    (
-                        [instructionPointerReference, startAdress, endAddress],
-                        childDapID
-                    ) => {
-                        if (
-                            args.memoryReference ===
-                                instructionPointerReference ||
-                            args.memoryReference === startAdress ||
-                            args.memoryReference === endAddress
-                        ) {
-                            this.childDapIndex = childDapID;
-                        }
+                this.childDapIndex = this.addressMap.has(args.memoryReference)
+                    ? this.addressMap.get(args.memoryReference)
+                    : this.childDapIndex;
+                if (this.childDapIndex !== undefined) {
+                    const disassemble = await this.childDaps[
+                        this.childDapIndex
+                    ].disassembleRequest(args);
+                    response.body = disassemble.body;
+                    const instructions = disassemble.body?.instructions;
+                    if (instructions !== undefined) {
+                        this.addressMap.set(
+                            instructions[0].address,
+                            this.childDapIndex
+                        );
+                        this.addressMap.set(
+                            instructions[instructions.length - 1].address,
+                            this.childDapIndex
+                        );
+                        this.sendResponse(response);
+                    } else {
+                        this.sendErrorResponse(
+                            response,
+                            1,
+                            'Cannot get disassembled data'
+                        );
                     }
-                );
-                const disassemble = await this.childDaps[
-                    this.childDapIndex as number
-                ].disassembleRequest(args);
-                response.body = disassemble.body;
-                this.addressMap.set(this.childDapIndex as number, [
-                    this.addressMap.get(
-                        this.childDapIndex as number
-                    )?.[0] as string,
-                    disassemble.body?.instructions[0].address as string,
-                    disassemble.body?.instructions[
-                        disassemble.body?.instructions.length - 1
-                    ].address as string,
-                ]);
-                this.sendResponse(response);
+                } else {
+                    this.sendErrorResponse(
+                        response,
+                        1,
+                        'Cannot determine the index of the child Dap'
+                    );
+                }
             } catch (err) {
                 this.sendErrorResponse(
                     response,
