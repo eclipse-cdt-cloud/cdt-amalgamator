@@ -107,7 +107,7 @@ export class AmalgamatorSession extends LoggingDebugSession {
     /* child processes XXX: A type that represents the union of the following datastructures? */
     protected childDaps: AmalgamatorClient[] = [];
     /**
-     * This is a map of the start/end addresses or the instructionPointerReference that client see -> child DAP index, child DAP addresses
+     * This is a map of the start/end addresses or the instructionPointerReference that client sees -> child DAP index, child DAP addresses
      */
     protected addressMap: Map<string, number> = new Map<string, number>();
     protected childDapNames: string[] = [];
