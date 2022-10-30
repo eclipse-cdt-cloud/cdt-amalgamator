@@ -108,6 +108,21 @@ export class AmalgamatorSession extends LoggingDebugSession {
     protected childDaps: AmalgamatorClient[] = [];
     /**
      * This is a map of the start/end addresses or the instructionPointerReference that client sees -> child DAP index, child DAP addresses
+     *
+     * It is needed to workaround for problems:
+     *  1. VSCode assuming that the instructionPointerReference has the same format as DisassembledInstruction.address
+     *  even though the spec doesn't say so.
+     *  See the spec at https://microsoft.github.io/debug-adapter-protocol/specification#Types_StackFrame
+     *  The problem has been reported at https://github.com/microsoft/vscode/issues/164875
+     *  2. VSCode/debug adapter protocol does not support multiple memory spaces.
+     *  The problem has been reported at https://github.com/microsoft/vscode/issues/164877
+     * Solution:
+     *  Based on elements: start addresses or end addresses or the instructionPointerReference to determine
+     *  the child dap to be handled.
+     * Note:
+     *  1. This should be updated after problems are resolved
+     *  2. Limit of the solution is this can work incorrectly when child daps have same start addresses
+     *  or end addresses or the instructionPointerReference.
      */
     protected addressMap: Map<string, number> = new Map<string, number>();
     protected childDapNames: string[] = [];
@@ -408,22 +423,6 @@ export class AmalgamatorSession extends LoggingDebugSession {
         frames.forEach((frame) => {
             frame.id = this.frameHandles.create([childDap, frame.id]);
             if (frame.instructionPointerReference) {
-                /**
-                 * Here's a workaround for problems:
-                 *  1. VSCode assuming that the instructionPointerReference has the same format as DisassembledInstruction.address
-                 *  even though the spec doesn't say so.
-                 *  See the spec at https://microsoft.github.io/debug-adapter-protocol/specification#Types_StackFrame
-                 *  The problem has been reported at https://github.com/microsoft/vscode/issues/164875
-                 *  2. VSCode/debug adapter protocol does not support multiple memory spaces.
-                 *  The problem has been reported at https://github.com/microsoft/vscode/issues/164877
-                 * Solution:
-                 *  Based on elements: start addresses or end addresses or the instructionPointerReference to determine
-                 *  the child dap to be handled.
-                 * Note:
-                 *  1. This should be updated after problems are resolved
-                 *  2. Limit of the solution is this can work incorrectly when child daps have same start addresses
-                 *  or end addresses or the instructionPointerReference.
-                 */
                 this.addressMap.set(
                     frame.instructionPointerReference,
                     childIndex
@@ -522,22 +521,6 @@ export class AmalgamatorSession extends LoggingDebugSession {
                 instructions: [],
             };
             try {
-                /**
-                 * Here's a workaround for problems:
-                 * 1. VSCode assuming that the instructionPointerReference has the same format as DisassembledInstruction.address
-                 * even though the spec doesn't say so.
-                 * See the spec at https://microsoft.github.io/debug-adapter-protocol/specification#Types_StackFrame
-                 * The problem has been reported at https://github.com/microsoft/vscode/issues/164875
-                 * 2. VSCode/debug adapter protocol does not support multiple memory spaces.
-                 * The problem has been reported at https://github.com/microsoft/vscode/issues/164877
-                 * Solution:
-                 * Based on elements: start addresses or end addresses or the instructionPointerReference to determine
-                 * the child dap to be handled.
-                 * Note:
-                 * 1. This should be updated after problems are resolved
-                 * 2. Limit of the solution is that it can work incorrectly when child daps have the same start addresses
-                 * or end addresses or the instructionPointerReference.
-                 */
                 this.childDapIndex = this.addressMap.has(args.memoryReference)
                     ? this.addressMap.get(args.memoryReference)
                     : this.childDapIndex;
