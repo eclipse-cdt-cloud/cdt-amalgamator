@@ -421,7 +421,7 @@ export class AmalgamatorSession extends LoggingDebugSession {
                  *  the child dap to be handled.
                  * Note:
                  *  1. This should be updated after problems are resolved
-                 *  2. Limit of that solution is this can work incorrectly when child daps have same start addresses
+                 *  2. Limit of the solution is this can work incorrectly when child daps have same start addresses
                  *  or end addresses or the instructionPointerReference.
                  */
                 this.addressMap.set(
@@ -535,7 +535,7 @@ export class AmalgamatorSession extends LoggingDebugSession {
                  * the child dap to be handled.
                  * Note:
                  * 1. This should be updated after problems are resolved
-                 * 2. Limit of that solution is that it can work incorrectly when child daps have the same start addresses
+                 * 2. Limit of the solution is that it can work incorrectly when child daps have the same start addresses
                  * or end addresses or the instructionPointerReference.
                  */
                 this.childDapIndex = this.addressMap.has(args.memoryReference)
