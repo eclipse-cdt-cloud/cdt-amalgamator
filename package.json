@@ -14,7 +14,6 @@
   "categories": [
     "Debuggers"
   ],
-  "private": true,
   "scripts": {
     "build": "tsc -p ./",
     "lint": "eslint . --ext .ts,.tsx",
