@@ -154,7 +154,7 @@ before(function (done) {
 
 function getAdapterAndArgs(adapter?: string): string {
     const chosenAdapter = adapter !== undefined ? adapter : defaultAdapter;
-    let args: string = path.join(__dirname, '../../out', chosenAdapter);
+    let args: string = path.join(__dirname, '../../dist', chosenAdapter);
     if (process.env.INSPECT_DEBUG_ADAPTER) {
         args = '--inspect-brk ' + args;
     }

@@ -19,7 +19,7 @@
       "cwd": "${workspaceFolder}",
       "program": "${workspaceFolder}/src/debugAdapter.ts",
       "args": ["--server=4711"],
-      "outFiles": ["${workspaceFolder}/out/**/*.js"]
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"]
     },
     {
       "type": "node",

@@ -21,7 +21,7 @@
     "format-check": "prettier --check .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "watch": "tsc -w",
-    "test": "cross-env JUNIT_REPORT_PATH=test-reports/integration.xml JUNIT_REPORT_STACK=1 JUNIT_REPORT_PACKAGES=1 mocha --reporter mocha-jenkins-reporter out/integration-tests/*.spec.js"
+    "test": "cross-env JUNIT_REPORT_PATH=test-reports/integration.xml JUNIT_REPORT_STACK=1 JUNIT_REPORT_PACKAGES=1 mocha --reporter mocha-jenkins-reporter dist/integration-tests/*.spec.js"
   },
   "devDependencies": {
     "@types/chai": "^4.3.0",
@@ -62,7 +62,7 @@
       {
         "type": "amalgamator",
         "label": "CDT Amalgamator",
-        "program": "./out/debugAdapter.js",
+        "program": "./dist/debugAdapter.js",
         "runtime": "node",
         "configurationAttributes": {
           "launch": {
@@ -109,5 +109,15 @@
   },
   "extensionDependencies": [
     "eclipse-cdt.cdt-gdb-vscode"
+  ],
+  "files": [
+    "NOTICE",
+    "LICENSE",
+    "README.md",
+    "CONTRIBUTING.md",
+    "dist/**/*.js",
+    "dist/**/*.js.map",
+    "dist/**/*.d.ts",
+    "src/*.ts"
   ]
 }
