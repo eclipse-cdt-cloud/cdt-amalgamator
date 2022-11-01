@@ -10,4 +10,3 @@
 
 export * from './AmalgamatorSession';
 export * from './AmalgamatorClient';
-export * from './debugAdapter';
