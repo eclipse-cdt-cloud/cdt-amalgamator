@@ -2,6 +2,8 @@
   "name": "cdt-amalgamator",
   "description": "Amalgamator Debug Adapter from Eclipse CDT",
   "version": "0.0.3",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "publisher": "Eclipse CDT",
   "author": {
     "name": "Jonah Graham",

@@ -13,7 +13,8 @@
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
     "sourceMap": true,
-    "preserveWatchOutput": true
+    "preserveWatchOutput": true,
+    "declaration": true
   },
   "exclude": ["**/client/*"]
 }
