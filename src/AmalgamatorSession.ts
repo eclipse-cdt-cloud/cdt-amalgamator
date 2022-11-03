@@ -416,6 +416,7 @@ export class AmalgamatorSession extends LoggingDebugSession {
     ): Promise<void> {
         const [childIndex, childId] = await this.getThreadInfo(args.threadId);
         args.threadId = childId;
+        this.childDapIndex = childIndex;
         const childDap = this.childDaps[childIndex];
         const childResponse = await childDap.stackTraceRequest(args);
         const frames = childResponse.body.stackFrames;
@@ -638,11 +639,18 @@ export class AmalgamatorSession extends LoggingDebugSession {
         args: any
     ): Promise<void> {
         // XXX: Which childDap to send a customRequest to? Probably needs domain specific knowledge.
-        const childResponse = await this.childDaps[0].customRequest(
-            command,
-            args
-        );
-        response.body = childResponse.body;
-        this.sendResponse(response);
+        if (this.childDapIndex !== undefined) {
+            const childResponse = await this.childDaps[
+                this.childDapIndex
+            ].customRequest(command, args);
+            response.body = childResponse.body;
+            this.sendResponse(response);
+        } else {
+            this.sendErrorResponse(
+                response,
+                1,
+                'Cannot determine the index of the child Dap'
+            );
+        }
     }
 }
