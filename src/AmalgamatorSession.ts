@@ -637,12 +637,19 @@ export class AmalgamatorSession extends LoggingDebugSession {
         response: DebugProtocol.Response,
         args: any
     ): Promise<void> {
-        // XXX: Which childDap to send a customRequest to? Probably needs domain specific knowledge.
-        const childResponse = await this.childDaps[0].customRequest(
-            command,
-            args
-        );
-        response.body = childResponse.body;
-        this.sendResponse(response);
+        if (command === 'cdt-gdb-adapter/Memory') {
+            if (args.address === '') {
+                response.body = { data: '', address: '' };
+                response.body.child = this.childDapNames;
+            } else {
+                const childResponse = await this.childDaps[
+                    args.child
+                ].customRequest(command, args);
+                response.body = childResponse.body;
+            }
+            this.sendResponse(response);
+        } else {
+            super.customRequest(command, response, args);
+        }
     }
 }
