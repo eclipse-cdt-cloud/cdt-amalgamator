@@ -654,12 +654,30 @@ export class AmalgamatorSession extends LoggingDebugSession {
         args: any
     ): Promise<void> {
         if (command === 'cdt-amalgamator/getChildDapNames') {
+            if (typeof args.child !== 'number') {
+                throw new Error(
+                    `Invalid type for 'length', expected number, got ${typeof args.child}`
+                );
+            }
+
             if (args.child !== -1) {
                 this.childDapIndex = args.child;
             }
             response.body = { child: this.childDapNames } as ChildDapContents;
             this.sendResponse(response);
         } else if (command === 'cdt-gdb-adapter/Memory') {
+            if (typeof args.address !== 'string') {
+                throw new Error(
+                    `Invalid type for 'address', expected string, got ${typeof args.address}`
+                );
+            }
+
+            if (typeof args.length !== 'number') {
+                throw new Error(
+                    `Invalid type for 'length', expected number, got ${typeof args.length}`
+                );
+            }
+
             if (this.childDapIndex !== undefined) {
                 const childResponse = await this.childDaps[
                     this.childDapIndex
