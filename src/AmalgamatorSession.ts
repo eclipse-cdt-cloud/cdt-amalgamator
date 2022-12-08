@@ -17,6 +17,7 @@ import {
     LoggingDebugSession,
     Event,
     Handles,
+    Response,
 } from '@vscode/debugadapter';
 import { DebugProtocol } from '@vscode/debugprotocol';
 import { AmalgamatorClient } from './AmalgamatorClient';
@@ -70,6 +71,21 @@ export interface RequestArguments extends DebugProtocol.LaunchRequestArguments {
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface LaunchRequestArguments extends RequestArguments {}
+
+export interface ChildDapRequestArguments {
+    child: number;
+}
+
+/**
+ * Response for our custom 'cdt-amalgamator/getChildDapNames' request.
+ */
+export interface ChildDapContents {
+    child?: string[];
+}
+
+export interface ChildDapResponse extends Response {
+    body: ChildDapContents;
+}
 
 export class StoppedEvent extends Event implements DebugProtocol.StoppedEvent {
     public body: {
@@ -637,19 +653,28 @@ export class AmalgamatorSession extends LoggingDebugSession {
         response: DebugProtocol.Response,
         args: any
     ): Promise<void> {
-        if (command === 'cdt-gdb-adapter/Memory') {
-            if (args.address === '') {
-                response.body = { data: '', address: '' };
-                response.body.child = this.childDapNames;
-            } else {
+        if (command === 'cdt-amalgamator/getChildDapNames') {
+            if (args.child !== -1) {
+                this.childDapIndex = args.child;
+            }
+            response.body = { child: this.childDapNames } as ChildDapContents;
+            this.sendResponse(response);
+        } else if (command === 'cdt-gdb-adapter/Memory') {
+            if (this.childDapIndex !== undefined) {
                 const childResponse = await this.childDaps[
-                    args.child
+                    this.childDapIndex
                 ].customRequest(command, args);
                 response.body = childResponse.body;
+                this.sendResponse(response);
+            } else {
+                this.sendErrorResponse(
+                    response,
+                    1,
+                    'Cannot determine the index of the child Dap'
+                );
             }
-            this.sendResponse(response);
         } else {
-            super.customRequest(command, response, args);
+            return super.customRequest(command, response, args);
         }
     }
 }
