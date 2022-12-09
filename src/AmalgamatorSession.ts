@@ -659,38 +659,24 @@ export class AmalgamatorSession extends LoggingDebugSession {
                     `Invalid type for 'length', expected number, got ${typeof args.child}`
                 );
             }
-
-            if (args.child !== -1) {
-                this.childDapIndex = args.child;
-            }
             response.body = { child: this.childDapNames } as ChildDapContents;
             this.sendResponse(response);
-        } else if (command === 'cdt-gdb-adapter/Memory') {
+        } else if (command === 'cdt-amalgamator/Memory') {
             if (typeof args.address !== 'string') {
                 throw new Error(
                     `Invalid type for 'address', expected string, got ${typeof args.address}`
                 );
             }
-
             if (typeof args.length !== 'number') {
                 throw new Error(
                     `Invalid type for 'length', expected number, got ${typeof args.length}`
                 );
             }
-
-            if (this.childDapIndex !== undefined) {
-                const childResponse = await this.childDaps[
-                    this.childDapIndex
-                ].customRequest(command, args);
-                response.body = childResponse.body;
-                this.sendResponse(response);
-            } else {
-                this.sendErrorResponse(
-                    response,
-                    1,
-                    'Cannot determine the index of the child Dap'
-                );
-            }
+            const childResponse = await this.childDaps[
+                args.child
+            ].customRequest('cdt-gdb-adapter/Memory', args);
+            response.body = childResponse.body;
+            this.sendResponse(response);
         } else {
             return super.customRequest(command, response, args);
         }
