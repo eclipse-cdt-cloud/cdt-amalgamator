@@ -672,6 +672,11 @@ export class AmalgamatorSession extends LoggingDebugSession {
                     `Invalid type for 'length', expected number, got ${typeof args.length}`
                 );
             }
+            if (typeof args.child !== 'number') {
+                throw new Error(
+                    `Invalid type for 'child', expected number, got ${typeof args.child}`
+                );
+            }
             const childResponse = await this.childDaps[
                 args.child
             ].customRequest('cdt-gdb-adapter/Memory', args);
