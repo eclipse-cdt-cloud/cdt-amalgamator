@@ -17,6 +17,7 @@ import {
     LoggingDebugSession,
     Event,
     Handles,
+    Response,
 } from '@vscode/debugadapter';
 import { DebugProtocol } from '@vscode/debugprotocol';
 import { AmalgamatorClient } from './AmalgamatorClient';
@@ -70,6 +71,17 @@ export interface RequestArguments extends DebugProtocol.LaunchRequestArguments {
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface LaunchRequestArguments extends RequestArguments {}
+
+/**
+ * Response for our custom 'cdt-amalgamator/getChildDapNames' request.
+ */
+export interface ChildDapContents {
+    children?: string[];
+}
+
+export interface ChildDapResponse extends Response {
+    body: ChildDapContents;
+}
 
 export class StoppedEvent extends Event implements DebugProtocol.StoppedEvent {
     public body: {
@@ -637,12 +649,34 @@ export class AmalgamatorSession extends LoggingDebugSession {
         response: DebugProtocol.Response,
         args: any
     ): Promise<void> {
-        // XXX: Which childDap to send a customRequest to? Probably needs domain specific knowledge.
-        const childResponse = await this.childDaps[0].customRequest(
-            command,
-            args
-        );
-        response.body = childResponse.body;
-        this.sendResponse(response);
+        if (command === 'cdt-amalgamator/getChildDapNames') {
+            response.body = {
+                children: this.childDapNames,
+            } as ChildDapContents;
+            this.sendResponse(response);
+        } else if (command === 'cdt-amalgamator/Memory') {
+            if (typeof args.address !== 'string') {
+                throw new Error(
+                    `Invalid type for 'address', expected string, got ${typeof args.address}`
+                );
+            }
+            if (typeof args.length !== 'number') {
+                throw new Error(
+                    `Invalid type for 'length', expected number, got ${typeof args.length}`
+                );
+            }
+            if (typeof args.child !== 'number') {
+                throw new Error(
+                    `Invalid type for 'child', expected number, got ${typeof args.child}`
+                );
+            }
+            const childResponse = await this.childDaps[
+                args.child
+            ].customRequest('cdt-gdb-adapter/Memory', args);
+            response.body = childResponse.body;
+            this.sendResponse(response);
+        } else {
+            return super.customRequest(command, response, args);
+        }
     }
 }
