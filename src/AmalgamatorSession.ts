@@ -72,15 +72,11 @@ export interface RequestArguments extends DebugProtocol.LaunchRequestArguments {
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface LaunchRequestArguments extends RequestArguments {}
 
-export interface ChildDapRequestArguments {
-    child: number;
-}
-
 /**
  * Response for our custom 'cdt-amalgamator/getChildDapNames' request.
  */
 export interface ChildDapContents {
-    child?: string[];
+    children?: string[];
 }
 
 export interface ChildDapResponse extends Response {
@@ -654,12 +650,9 @@ export class AmalgamatorSession extends LoggingDebugSession {
         args: any
     ): Promise<void> {
         if (command === 'cdt-amalgamator/getChildDapNames') {
-            if (typeof args.child !== 'number') {
-                throw new Error(
-                    `Invalid type for 'length', expected number, got ${typeof args.child}`
-                );
-            }
-            response.body = { child: this.childDapNames } as ChildDapContents;
+            response.body = {
+                children: this.childDapNames,
+            } as ChildDapContents;
             this.sendResponse(response);
         } else if (command === 'cdt-amalgamator/Memory') {
             if (typeof args.address !== 'string') {
