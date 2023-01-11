@@ -618,16 +618,33 @@ export class AmalgamatorSession extends LoggingDebugSession {
         response: DebugProtocol.ContinueResponse,
         args: DebugProtocol.ContinueArguments
     ): Promise<void> {
-        const [childIndex, childId] = await this.getThreadInfo(args.threadId);
-        args.threadId = childId;
-        const childDap = this.childDaps[childIndex];
-        const childResponse = await childDap.continueRequest(args);
-        response.body = childResponse.body;
-        if (this.childDaps.length > 1) {
-            if (childResponse.body === undefined) {
-                response.body = {};
+        const childDapsLength = this.childDaps.length;
+        if (args.singleThread !== undefined && childDapsLength > 1) {
+            for (let i = 0; i < childDapsLength; i++) {
+                args.threadId = 1000 + i;
+                const [childIndex, childId] = await this.getThreadInfo(
+                    args.threadId
+                );
+                args.threadId = childId;
+                const childDap = this.childDaps[childIndex];
+                await childDap.continueRequest(args);
             }
-            response.body.allThreadsContinued = false;
+            response.body = {};
+            response.body.allThreadsContinued = true;
+        } else {
+            const [childIndex, childId] = await this.getThreadInfo(
+                args.threadId
+            );
+            args.threadId = childId;
+            const childDap = this.childDaps[childIndex];
+            const childResponse = await childDap.continueRequest(args);
+            response.body = childResponse.body;
+            if (childDapsLength > 1) {
+                if (childResponse.body === undefined) {
+                    response.body = {};
+                }
+                response.body.allThreadsContinued = false;
+            }
         }
         this.sendResponse(response);
     }
