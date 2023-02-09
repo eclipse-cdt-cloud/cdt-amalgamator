@@ -651,16 +651,16 @@ export class AmalgamatorSession extends LoggingDebugSession {
         args: DebugProtocol.ContinueArguments
     ): Promise<void> {
         const [childIndex, childId] = await this.getThreadInfo(args.threadId);
-            args.threadId = childId;
-            const childDap = this.childDaps[childIndex];
-            const childResponse = await childDap.continueRequest(args);
-            response.body = childResponse.body;
+        args.threadId = childId;
+        const childDap = this.childDaps[childIndex];
+        const childResponse = await childDap.continueRequest(args);
+        response.body = childResponse.body;
         if (this.childDaps.length > 1) {
-                if (childResponse.body === undefined) {
-                    response.body = {};
-                }
-                response.body.allThreadsContinued = false;
+            if (childResponse.body === undefined) {
+                response.body = {};
             }
+            response.body.allThreadsContinued = false;
+        }
         this.sendResponse(response);
     }
 
