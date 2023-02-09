@@ -108,6 +108,23 @@ export class StoppedEvent extends Event implements DebugProtocol.StoppedEvent {
     }
 }
 
+export class ContinuedEvent
+    extends Event
+    implements DebugProtocol.ContinuedEvent
+{
+    public body: {
+        /** The thread which was continued. */
+        threadId: number;
+        /** If 'allThreadsContinued' is true, a debug adapter can announce that all threads have continued. */
+        allThreadsContinued?: boolean;
+    };
+
+    constructor(threadId: number, allThreadsContinued?: false) {
+        super('continued');
+        this.body = { threadId, allThreadsContinued };
+    }
+}
+
 export class AmalgamatorSession extends LoggingDebugSession {
     /* A reference to the logger to be used by subclasses */
     protected logger: Logger.Logger;
@@ -272,7 +289,22 @@ export class AmalgamatorSession extends LoggingDebugSession {
                     }
                 });
             }
-        });
+        }).on('continued', async (event) => {
+                const e = <DebugProtocol.ContinuedEvent>event;
+                const intiatingThreadId = e.body.threadId;
+                const threadMap = await this.getThreadMap();
+                // First send the event for the stopped thread
+                threadMap.forEach(([childDapIndex, childId], clientId) => {
+                    if (
+                        childDapIndex === index &&
+                        childId == intiatingThreadId
+                    ) {
+                        this.sendEvent(
+                            new ContinuedEvent(clientId, false)
+                        );
+                    }
+                });
+            });
 
         await dc.start();
         await dc.initializeRequest(this.initializeRequestArgs);
@@ -618,34 +650,17 @@ export class AmalgamatorSession extends LoggingDebugSession {
         response: DebugProtocol.ContinueResponse,
         args: DebugProtocol.ContinueArguments
     ): Promise<void> {
-        const childDapsLength = this.childDaps.length;
-        if (args.singleThread !== undefined && childDapsLength > 1) {
-            for (let i = 0; i < childDapsLength; i++) {
-                args.threadId = 1000 + i;
-                const [childIndex, childId] = await this.getThreadInfo(
-                    args.threadId
-                );
-                args.threadId = childId;
-                const childDap = this.childDaps[childIndex];
-                await childDap.continueRequest(args);
-            }
-            response.body = {};
-            response.body.allThreadsContinued = true;
-        } else {
-            const [childIndex, childId] = await this.getThreadInfo(
-                args.threadId
-            );
+        const [childIndex, childId] = await this.getThreadInfo(args.threadId);
             args.threadId = childId;
             const childDap = this.childDaps[childIndex];
             const childResponse = await childDap.continueRequest(args);
             response.body = childResponse.body;
-            if (childDapsLength > 1) {
+        if (this.childDaps.length > 1) {
                 if (childResponse.body === undefined) {
                     response.body = {};
                 }
                 response.body.allThreadsContinued = false;
             }
-        }
         this.sendResponse(response);
     }
 
@@ -691,6 +706,20 @@ export class AmalgamatorSession extends LoggingDebugSession {
                 args.child
             ].customRequest('cdt-gdb-adapter/Memory', args);
             response.body = childResponse.body;
+            this.sendResponse(response);
+        } else if (command === 'cdt-amalgamator/resumeAll') {
+            const [, threads] = await this.collectChildTheads();
+            threads.forEach(async (thread) => {
+                const [childIndex, childId] = await this.getThreadInfo(
+                    thread.id
+                );
+                args = { threadId: childId } as DebugProtocol.ContinueArguments;
+                await this.childDaps[childIndex].customRequest(
+                    'cdt-gdb-adapter/resumeAll',
+                    args
+                );
+            });
+            response.body = 'OK';
             this.sendResponse(response);
         } else {
             return super.customRequest(command, response, args);
