@@ -710,16 +710,14 @@ export class AmalgamatorSession extends LoggingDebugSession {
         } else if (command === 'cdt-amalgamator/resumeAll') {
             const [, threads] = await this.collectChildTheads();
             threads.forEach(async (thread) => {
-                const [childIndex, childId] = await this.getThreadInfo(
-                    thread.id
-                );
-                args = { threadId: childId } as DebugProtocol.ContinueArguments;
-                await this.childDaps[childIndex].customRequest(
-                    'cdt-gdb-adapter/resumeAll',
-                    args
-                );
+                const continueResponse =
+                    response as DebugProtocol.ContinueResponse;
+                const continueArgs = {
+                    threadId: thread.id,
+                } as DebugProtocol.ContinueArguments;
+                this.continueRequest(continueResponse, continueArgs);
+                this.sendEvent(new ContinuedEvent(continueArgs.threadId));
             });
-            response.body = 'OK';
             this.sendResponse(response);
         } else {
             return super.customRequest(command, response, args);
