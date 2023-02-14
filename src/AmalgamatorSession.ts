@@ -700,23 +700,28 @@ export class AmalgamatorSession extends LoggingDebugSession {
             const [, threads] = await this.collectChildTheads();
             await Promise.all(
                 threads.map(async (thread) => {
-                    const [childIndex] = await this.getThreadInfo(thread.id);
-                    const childResponse = await this.childDaps[
-                        childIndex
-                    ].threadsRequest();
-                    const threadInfo = childResponse.body
-                        .threads[0] as ThreadInfo;
-                    if (threadInfo.running === false) {
-                        const continueResponse =
-                            response as DebugProtocol.ContinueResponse;
-                        const continueArgs = {
-                            threadId: thread.id,
-                        } as DebugProtocol.ContinueArguments;
-                        this.continueRequest(continueResponse, continueArgs);
-                        this.sendEvent(
-                            new ContinuedEvent(continueArgs.threadId)
-                        );
+                    const [childIndex, childId] = await this.getThreadInfo(
+                        thread.id
+                    );
+                    const childDap = this.childDaps[childIndex];
+                    const childResponse = await childDap.threadsRequest();
+                    for (
+                        let i = 0;
+                        i < childResponse.body.threads.length;
+                        i++
+                    ) {
+                        const threadInfo = childResponse.body.threads[
+                            i
+                        ] as ThreadInfo;
+                        if (threadInfo.running === false) {
+                            const args = {
+                                threadId: childId,
+                            } as DebugProtocol.ContinueArguments;
+                            await childDap.continueRequest(args);
+                            this.sendEvent(new ContinuedEvent(args.threadId));
+                        }
                     }
+                    return Promise.resolve();
                 })
             );
             this.sendResponse(response);
