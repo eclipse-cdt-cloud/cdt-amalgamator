@@ -698,22 +698,27 @@ export class AmalgamatorSession extends LoggingDebugSession {
             this.sendResponse(response);
         } else if (command === 'cdt-amalgamator/resumeAll') {
             const [, threads] = await this.collectChildTheads();
-            threads.forEach(async (thread) => {
-                const [childIndex] = await this.getThreadInfo(thread.id);
-                const childResponse = await this.childDaps[
-                    childIndex
-                ].threadsRequest();
-                const threadInfo = childResponse.body.threads[0] as ThreadInfo;
-                if (threadInfo.running === false) {
-                    const continueResponse =
-                        response as DebugProtocol.ContinueResponse;
-                    const continueArgs = {
-                        threadId: thread.id,
-                    } as DebugProtocol.ContinueArguments;
-                    this.continueRequest(continueResponse, continueArgs);
-                    this.sendEvent(new ContinuedEvent(continueArgs.threadId));
-                }
-            });
+            await Promise.all(
+                threads.map(async (thread) => {
+                    const [childIndex] = await this.getThreadInfo(thread.id);
+                    const childResponse = await this.childDaps[
+                        childIndex
+                    ].threadsRequest();
+                    const threadInfo = childResponse.body
+                        .threads[0] as ThreadInfo;
+                    if (threadInfo.running === false) {
+                        const continueResponse =
+                            response as DebugProtocol.ContinueResponse;
+                        const continueArgs = {
+                            threadId: thread.id,
+                        } as DebugProtocol.ContinueArguments;
+                        this.continueRequest(continueResponse, continueArgs);
+                        this.sendEvent(
+                            new ContinuedEvent(continueArgs.threadId)
+                        );
+                    }
+                })
+            );
             this.sendResponse(response);
         } else {
             return super.customRequest(command, response, args);
