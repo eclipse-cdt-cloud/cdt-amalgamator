@@ -705,24 +705,10 @@ export class AmalgamatorSession extends LoggingDebugSession {
                 const childDap = this.childDaps[childIndex];
                 const childResponse = await childDap.threadsRequest();
                 for (const threadOfChildDap of childResponse.body.threads) {
-                    const ThreadInfo = threadOfChildDap as ThreadInfo;
-                    if (ThreadInfo.running === false) {
-                        const args = {
-                            threadId: childId,
-                        } as DebugProtocol.ContinueArguments;
-                        const continueResponse = await childDap.continueRequest(
-                            args
-                        );
-                        if (continueResponse.body === undefined) {
-                            continueResponse.body = {};
-                        }
-                        continueResponse.body.allThreadsContinued = false;
-                        this.sendEvent(
-                            new ContinuedEvent(
-                                thread.id,
-                                continueResponse.body.allThreadsContinued
-                            )
-                        );
+                    const threadInfo = threadOfChildDap as ThreadInfo;
+                    if (threadInfo.running === false) {
+                        await childDap.continueRequest({ threadId: childId });
+                        this.sendEvent(new ContinuedEvent(thread.id, false));
                     }
                 }
             }
