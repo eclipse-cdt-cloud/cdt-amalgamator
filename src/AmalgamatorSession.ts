@@ -698,17 +698,15 @@ export class AmalgamatorSession extends LoggingDebugSession {
             this.sendResponse(response);
         } else if (command === 'cdt-amalgamator/resumeAll') {
             const [, threads] = await this.collectChildTheads();
-            for (let i = 0; i < threads.length; i++) {
+            for (const thread of threads) {
                 const [childIndex, childId] = await this.getThreadInfo(
-                    threads[i].id
+                    thread.id
                 );
                 const childDap = this.childDaps[childIndex];
                 const childResponse = await childDap.threadsRequest();
-                for (let j = 0; j < childResponse.body.threads.length; j++) {
-                    const threadInfo = childResponse.body.threads[
-                        j
-                    ] as ThreadInfo;
-                    if (threadInfo.running === false) {
+                for (const threadOfChildDap of childResponse.body.threads) {
+                    const ThreadInfo = threadOfChildDap as ThreadInfo;
+                    if (ThreadInfo.running === false) {
                         const args = {
                             threadId: childId,
                         } as DebugProtocol.ContinueArguments;
@@ -721,7 +719,7 @@ export class AmalgamatorSession extends LoggingDebugSession {
                         continueResponse.body.allThreadsContinued = false;
                         this.sendEvent(
                             new ContinuedEvent(
-                                threads[i].id,
+                                thread.id,
                                 continueResponse.body.allThreadsContinued
                             )
                         );
