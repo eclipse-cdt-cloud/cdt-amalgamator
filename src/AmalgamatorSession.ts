@@ -119,7 +119,7 @@ export class ContinuedEvent
         allThreadsContinued?: boolean;
     };
 
-    constructor(threadId: number, allThreadsContinued?: false) {
+    constructor(threadId: number, allThreadsContinued: boolean) {
         super('continued');
         this.body = { threadId, allThreadsContinued };
     }
@@ -698,32 +698,36 @@ export class AmalgamatorSession extends LoggingDebugSession {
             this.sendResponse(response);
         } else if (command === 'cdt-amalgamator/resumeAll') {
             const [, threads] = await this.collectChildTheads();
-            await Promise.all(
-                threads.map(async (thread) => {
-                    const [childIndex, childId] = await this.getThreadInfo(
-                        thread.id
-                    );
-                    const childDap = this.childDaps[childIndex];
-                    const childResponse = await childDap.threadsRequest();
-                    for (
-                        let i = 0;
-                        i < childResponse.body.threads.length;
-                        i++
-                    ) {
-                        const threadInfo = childResponse.body.threads[
-                            i
-                        ] as ThreadInfo;
-                        if (threadInfo.running === false) {
-                            const args = {
-                                threadId: childId,
-                            } as DebugProtocol.ContinueArguments;
-                            await childDap.continueRequest(args);
-                            this.sendEvent(new ContinuedEvent(args.threadId));
+            for (let i = 0; i < threads.length; i++) {
+                const [childIndex, childId] = await this.getThreadInfo(
+                    threads[i].id
+                );
+                const childDap = this.childDaps[childIndex];
+                const childResponse = await childDap.threadsRequest();
+                for (let j = 0; j < childResponse.body.threads.length; j++) {
+                    const threadInfo = childResponse.body.threads[
+                        j
+                    ] as ThreadInfo;
+                    if (threadInfo.running === false) {
+                        const args = {
+                            threadId: childId,
+                        } as DebugProtocol.ContinueArguments;
+                        const continueResponse = await childDap.continueRequest(
+                            args
+                        );
+                        if (continueResponse.body === undefined) {
+                            continueResponse.body = {};
                         }
+                        continueResponse.body.allThreadsContinued = false;
+                        this.sendEvent(
+                            new ContinuedEvent(
+                                threads[i].id,
+                                continueResponse.body.allThreadsContinued
+                            )
+                        );
                     }
-                    return Promise.resolve();
-                })
-            );
+                }
+            }
             this.sendResponse(response);
         } else {
             return super.customRequest(command, response, args);
