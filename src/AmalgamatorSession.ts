@@ -108,6 +108,27 @@ export class StoppedEvent extends Event implements DebugProtocol.StoppedEvent {
     }
 }
 
+export class ContinuedEvent
+    extends Event
+    implements DebugProtocol.ContinuedEvent
+{
+    public body: {
+        /** The thread which was continued. */
+        threadId: number;
+        /** If 'allThreadsContinued' is true, a debug adapter can announce that all threads have continued. */
+        allThreadsContinued?: boolean;
+    };
+
+    constructor(threadId: number, allThreadsContinued: boolean) {
+        super('continued');
+        this.body = { threadId, allThreadsContinued };
+    }
+}
+
+export interface ThreadInfo extends DebugProtocol.Thread {
+    running: boolean;
+}
+
 export class AmalgamatorSession extends LoggingDebugSession {
     /* A reference to the logger to be used by subclasses */
     protected logger: Logger.Logger;
@@ -674,6 +695,23 @@ export class AmalgamatorSession extends LoggingDebugSession {
                 args.child
             ].customRequest('cdt-gdb-adapter/Memory', args);
             response.body = childResponse.body;
+            this.sendResponse(response);
+        } else if (command === 'cdt-amalgamator/resumeAll') {
+            const [, threads] = await this.collectChildTheads();
+            for (const thread of threads) {
+                const [childIndex, childId] = await this.getThreadInfo(
+                    thread.id
+                );
+                const childDap = this.childDaps[childIndex];
+                const childResponse = await childDap.threadsRequest();
+                for (const threadOfChildDap of childResponse.body.threads) {
+                    const threadInfo = threadOfChildDap as ThreadInfo;
+                    if (threadInfo.running === false) {
+                        await childDap.continueRequest({ threadId: childId });
+                        this.sendEvent(new ContinuedEvent(thread.id, false));
+                    }
+                }
+            }
             this.sendResponse(response);
         } else {
             return super.customRequest(command, response, args);
