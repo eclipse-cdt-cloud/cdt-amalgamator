@@ -696,7 +696,10 @@ export class AmalgamatorSession extends LoggingDebugSession {
             ].customRequest('cdt-gdb-adapter/Memory', args);
             response.body = childResponse.body;
             this.sendResponse(response);
-        } else if (command === 'cdt-amalgamator/resumeAll') {
+        } else if (
+            command === 'cdt-amalgamator/resumeAll' ||
+            command === 'cdt-amalgamator/suspendAll'
+        ) {
             const [, threads] = await this.collectChildTheads();
             for (const thread of threads) {
                 const [childIndex, childId] = await this.getThreadInfo(
@@ -706,9 +709,20 @@ export class AmalgamatorSession extends LoggingDebugSession {
                 const childResponse = await childDap.threadsRequest();
                 for (const threadOfChildDap of childResponse.body.threads) {
                     const threadInfo = threadOfChildDap as ThreadInfo;
-                    if (threadInfo.running === false) {
+                    if (
+                        threadInfo.running === false &&
+                        command === 'cdt-amalgamator/resumeAll'
+                    ) {
                         await childDap.continueRequest({ threadId: childId });
                         this.sendEvent(new ContinuedEvent(thread.id, false));
+                    } else if (
+                        threadInfo.running === true &&
+                        command === 'cdt-amalgamator/suspendAll'
+                    ) {
+                        await childDap.pauseRequest({ threadId: childId });
+                        this.sendEvent(
+                            new StoppedEvent('SIGINT', thread.id, false, false)
+                        );
                     }
                 }
             }
