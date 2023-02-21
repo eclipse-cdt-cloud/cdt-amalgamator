@@ -721,7 +721,7 @@ export class AmalgamatorSession extends LoggingDebugSession {
                     ) {
                         await childDap.pauseRequest({ threadId: childId });
                         this.sendEvent(
-                            new StoppedEvent('SIGINT', thread.id, false, false)
+                            new StoppedEvent('SIGINT', thread.id, true, false)
                         );
                     }
                 }
