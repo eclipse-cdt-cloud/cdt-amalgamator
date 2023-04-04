@@ -447,23 +447,33 @@ export class AmalgamatorSession extends LoggingDebugSession {
         response: DebugProtocol.StackTraceResponse,
         args: DebugProtocol.StackTraceArguments
     ): Promise<void> {
-        const [childIndex, childId] = await this.getThreadInfo(args.threadId);
-        args.threadId = childId;
-        const childDap = this.childDaps[childIndex];
-        const childResponse = await childDap.stackTraceRequest(args);
-        const frames = childResponse.body.stackFrames;
-        // XXX: When does frameHandles get reset as we don't have a "stopped all"
-        frames.forEach((frame) => {
-            frame.id = this.frameHandles.create([childDap, frame.id]);
-            if (frame.instructionPointerReference) {
-                this.addressMap.set(
-                    frame.instructionPointerReference,
-                    childIndex
-                );
-            }
-        });
-        response.body = childResponse.body;
-        this.sendResponse(response);
+        try {
+            const [childIndex, childId] = await this.getThreadInfo(
+                args.threadId
+            );
+            args.threadId = childId;
+            const childDap = this.childDaps[childIndex];
+            const childResponse = await childDap.stackTraceRequest(args);
+            const frames = childResponse.body.stackFrames;
+            // XXX: When does frameHandles get reset as we don't have a "stopped all"
+            frames.forEach((frame) => {
+                frame.id = this.frameHandles.create([childDap, frame.id]);
+                if (frame.instructionPointerReference) {
+                    this.addressMap.set(
+                        frame.instructionPointerReference,
+                        childIndex
+                    );
+                }
+            });
+            response.body = childResponse.body;
+            this.sendResponse(response);
+        } catch (err) {
+            this.sendErrorResponse(
+                response,
+                1,
+                err instanceof Error ? err.message : String(err)
+            );
+        }
     }
     protected async scopesRequest(
         response: DebugProtocol.ScopesResponse,
