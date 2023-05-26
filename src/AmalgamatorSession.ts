@@ -267,22 +267,14 @@ export class AmalgamatorSession extends LoggingDebugSession {
         }).on('stopped', async (event) => {
             const e = <DebugProtocol.StoppedEvent>event;
             const reason = e.body.reason;
-            const [, threads] = await this.collectChildTheads();
+            const intiatingThreadId = e.body.threadId;
+
+            await new Promise((res) => setTimeout(res, 5000));
             const threadMap = await this.getThreadMap();
             let stoppedDapIndex = -1;
             // First send the event for the stopped thread
-            threadMap.forEach(async ([childDapIndex, childId], clientId) => {
-                const childDap = this.childDaps[childDapIndex];
-                const childResponse = await childDap.threadsRequest();
-                const threadInfo = childResponse.body.threads.find(
-                    (th) => th.id === childId
-                ) as ThreadInfo;
-                const thread = threads.find((t) => t.id === clientId);
-                if (
-                    childDapIndex === index &&
-                    !threadInfo.running &&
-                    thread?.name.includes(threadInfo.name)
-                ) {
+            threadMap.forEach(([childDapIndex, childId], clientId) => {
+                if (childDapIndex === index && childId == intiatingThreadId) {
                     this.sendEvent(
                         new StoppedEvent(reason, clientId, false, false)
                     );
@@ -291,32 +283,16 @@ export class AmalgamatorSession extends LoggingDebugSession {
             });
             // then send the event for all the other stopped threads in the same child
             if (e.body.allThreadsStopped) {
-                threadMap.forEach(
-                    async ([childDapIndex, childId], clientId) => {
-                        if (childDapIndex === stoppedDapIndex) {
-                            const childDap = this.childDaps[childDapIndex];
-                            const childResponse =
-                                await childDap.threadsRequest();
-                            const threadInfo = childResponse.body.threads.find(
-                                (th) => th.id === childId
-                            ) as ThreadInfo;
-                            const thread = threads.find((t) => t.id === clientId);
-                            if (
-                                threadInfo.running &&
-                                thread?.name.includes(threadInfo.name)
-                            ) {
-                                this.sendEvent(
-                                    new StoppedEvent(
-                                        reason,
-                                        clientId,
-                                        true,
-                                        false
-                                    )
-                                );
-                            }
-                        }
+                threadMap.forEach(([childDapIndex, childId], clientId) => {
+                    if (
+                        childDapIndex === stoppedDapIndex &&
+                        childId != intiatingThreadId
+                    ) {
+                        this.sendEvent(
+                            new StoppedEvent(reason, clientId, true, false)
+                        );
                     }
-                );
+                });
             }
         });
 
@@ -746,14 +722,12 @@ export class AmalgamatorSession extends LoggingDebugSession {
                     const threadInfo = threadOfChildDap as ThreadInfo;
                     if (
                         threadInfo.running === false &&
-                        thread.name.includes(threadInfo.name) &&
                         command === 'cdt-amalgamator/resumeAll'
                     ) {
                         await childDap.continueRequest({ threadId: childId });
                         this.sendEvent(new ContinuedEvent(thread.id, false));
                     } else if (
                         threadInfo.running === true &&
-                        thread.name.includes(threadInfo.name) &&
                         command === 'cdt-amalgamator/suspendAll'
                     ) {
                         await childDap.pauseRequest({ threadId: childId });
