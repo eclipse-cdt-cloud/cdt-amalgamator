@@ -269,7 +269,6 @@ export class AmalgamatorSession extends LoggingDebugSession {
             const reason = e.body.reason;
             const intiatingThreadId = e.body.threadId;
 
-            await new Promise((res) => setTimeout(res, 5000));
             const threadMap = await this.getThreadMap();
             let stoppedDapIndex = -1;
             // First send the event for the stopped thread
@@ -722,12 +721,14 @@ export class AmalgamatorSession extends LoggingDebugSession {
                     const threadInfo = threadOfChildDap as ThreadInfo;
                     if (
                         threadInfo.running === false &&
+                        thread.name.includes(threadInfo.name) &&
                         command === 'cdt-amalgamator/resumeAll'
                     ) {
                         await childDap.continueRequest({ threadId: childId });
                         this.sendEvent(new ContinuedEvent(thread.id, false));
                     } else if (
                         threadInfo.running === true &&
+                        thread.name.includes(threadInfo.name) &&
                         command === 'cdt-amalgamator/suspendAll'
                     ) {
                         await childDap.pauseRequest({ threadId: childId });
