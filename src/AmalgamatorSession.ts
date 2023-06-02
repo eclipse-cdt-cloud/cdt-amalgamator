@@ -380,7 +380,7 @@ export class AmalgamatorSession extends LoggingDebugSession {
         }
     }
     private threadMapInProcess:
-        | Promise<[Map<number, [number, number]>, DebugProtocol.Thread[]]>
+        | Promise<[Map<number, [number, number]>, ThreadInfo[]]>
         | undefined;
     protected async getThreadMap(): Promise<Map<number, [number, number]>> {
         return new Promise<Map<number, [number, number]>>(
@@ -392,7 +392,7 @@ export class AmalgamatorSession extends LoggingDebugSession {
         );
     }
     protected getThreadMapInternal(): Promise<
-        [Map<number, [number, number]>, DebugProtocol.Thread[]]
+        [Map<number, [number, number]>, ThreadInfo[]]
     > {
         if (this.threadMapInProcess === undefined) {
             return this.collectChildTheads();
@@ -401,10 +401,10 @@ export class AmalgamatorSession extends LoggingDebugSession {
     }
 
     private collectChildTheads(): Promise<
-        [Map<number, [number, number]>, DebugProtocol.Thread[]]
+        [Map<number, [number, number]>, ThreadInfo[]]
     > {
         this.threadMapInProcess = new Promise((resolve, _reject) => {
-            const threads: DebugProtocol.Thread[] = [];
+            const threads: ThreadInfo[] = [];
             Promise.all(this.childDaps.map((dc) => dc.threadsRequest())).then(
                 (responses) => {
                     const threadMap: Map<number, [number, number]> = new Map<
@@ -421,7 +421,11 @@ export class AmalgamatorSession extends LoggingDebugSession {
                                         ? this.childDapNames[i] + ': '
                                         : ''
                                 } ${t.name}`, // XXX: prefix name here with which child this came from? What about the id of the child?
-                            } as DebugProtocol.Thread);
+                                running:
+                                    'running' in t
+                                        ? (t as ThreadInfo).running
+                                        : undefined,
+                            } as ThreadInfo);
                             threadMap.set(clientId, [i, t.id]);
                             clientId++;
                         });
@@ -716,24 +720,20 @@ export class AmalgamatorSession extends LoggingDebugSession {
                     thread.id
                 );
                 const childDap = this.childDaps[childIndex];
-                const childResponse = await childDap.threadsRequest();
-                for (const threadOfChildDap of childResponse.body.threads) {
-                    const threadInfo = threadOfChildDap as ThreadInfo;
-                    if (
-                        threadInfo.running === false &&
-                        command === 'cdt-amalgamator/resumeAll'
-                    ) {
-                        await childDap.continueRequest({ threadId: childId });
-                        this.sendEvent(new ContinuedEvent(thread.id, false));
-                    } else if (
-                        threadInfo.running === true &&
-                        command === 'cdt-amalgamator/suspendAll'
-                    ) {
-                        await childDap.pauseRequest({ threadId: childId });
-                        this.sendEvent(
-                            new StoppedEvent('SIGINT', thread.id, true, false)
-                        );
-                    }
+                if (
+                    thread.running === false &&
+                    command === 'cdt-amalgamator/resumeAll'
+                ) {
+                    await childDap.continueRequest({ threadId: childId });
+                    this.sendEvent(new ContinuedEvent(thread.id, false));
+                } else if (
+                    thread.running === true &&
+                    command === 'cdt-amalgamator/suspendAll'
+                ) {
+                    await childDap.pauseRequest({ threadId: childId });
+                    this.sendEvent(
+                        new StoppedEvent('SIGINT', thread.id, true, false)
+                    );
                 }
             }
             this.sendResponse(response);
