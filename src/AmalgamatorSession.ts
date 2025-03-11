@@ -18,6 +18,7 @@ import {
     Event,
     Handles,
     Response,
+    TerminatedEvent,
 } from '@vscode/debugadapter';
 import { DebugProtocol } from '@vscode/debugprotocol';
 import { AmalgamatorClient } from './AmalgamatorClient';
@@ -195,6 +196,7 @@ export class AmalgamatorSession extends LoggingDebugSession {
         response.body.supportsDisassembleRequest = true;
         response.body.supportsReadMemoryRequest = true;
         response.body.supportsWriteMemoryRequest = true;
+        response.body.supportsTerminateRequest = true;
         this.sendResponse(response);
     }
 
@@ -676,6 +678,29 @@ export class AmalgamatorSession extends LoggingDebugSession {
         const childDap = this.childDaps[childIndex];
         const childResponse = await childDap.pauseRequest(args);
         response.body = childResponse.body;
+        this.sendResponse(response);
+    }
+
+    protected async terminateRequest(
+        response: DebugProtocol.TerminateResponse,
+        args: DebugProtocol.TerminateArguments,
+    ) {
+        // Create an array of promises by mapping over each child debug adapter (childDap).
+        // For each child, call its terminateRequest method with the provided arguments.
+        const promises = this.childDaps.map((child) =>
+            child.terminateRequest(args),
+        );
+
+        // Wait for all terminateRequest promises to resolve.
+        // This ensures that all child debug sessions have been terminated before proceeding.
+        await Promise.all(promises);
+
+        // After all child sessions have been terminated, send a 'terminated' event
+        // to notify the client that the debug session has ended.
+        this.sendEvent(new TerminatedEvent());
+
+        // Finally, send the response back to the debugger to indicate
+        // that the terminate request has been successfully processed.
         this.sendResponse(response);
     }
 
