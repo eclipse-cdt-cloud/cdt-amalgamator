@@ -21,3 +21,8 @@ The amalgamator is not published and can be run within a VS Code debug session.
     -   step the processes indpe
     -   observe variables in different processes
     -   examine memory with the memory browser (`Ctrl+Shift-P` -> _GDB: Open Memory Browser_)
+
+## Background of the Amalgamator
+
+Please see the [`cdt-amalgamator.pdf`](./cdt-amalgamator.pdf) presentation for reference to how the amalgamator was originally envisioned
+and more information of the problem statement that it was trying to solve.
