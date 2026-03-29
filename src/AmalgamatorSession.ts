@@ -79,8 +79,19 @@ export interface ChildDapContents {
     children?: string[];
 }
 
+export interface ChildDapFull {
+    children?: {
+        name: string;
+        id: number;
+    }[];
+}
+
 export interface ChildDapResponse extends Response {
     body: ChildDapContents;
+}
+
+export interface ChildDapFullResponse extends Response {
+    body: ChildDapFull;
 }
 
 export class StoppedEvent extends Event implements DebugProtocol.StoppedEvent {
@@ -689,6 +700,16 @@ export class AmalgamatorSession extends LoggingDebugSession {
                 children: this.childDapNames,
             } as ChildDapContents;
             this.sendResponse(response);
+        } else if (command === 'cdt-amalgamator/getChildDaps') {
+            const fullDapResponse = response as ChildDapFullResponse;
+            const [, threads] = await this.collectChildTheads();
+            fullDapResponse.body = {
+                children: threads.map((child) => ({
+                    name: child.name,
+                    id: child.id,
+                })),
+            };
+            this.sendResponse(fullDapResponse);
         } else if (command === 'cdt-amalgamator/Memory') {
             if (typeof args.address !== 'string') {
                 throw new Error(
@@ -710,6 +731,35 @@ export class AmalgamatorSession extends LoggingDebugSession {
             ].customRequest('cdt-gdb-adapter/Memory', args);
             response.body = childResponse.body;
             this.sendResponse(response);
+        } else if (command === 'cdt-amalgamator/readMemory') {
+            try {
+                const childThreadID = args.child?.id;
+                if (typeof childThreadID !== 'number') {
+                    throw new Error(
+                        `Invalid type for 'child.id', expected number, got ${typeof childThreadID}`
+                    );
+                }
+                // Convert from ThreadID to Child array index.
+                const [childIndex,] = await this.getThreadInfo(
+                    childThreadID
+                );
+                if (typeof childIndex === 'undefined' || childIndex >= this.childDaps.length) {
+                    throw new Error(
+                        `Invalid value for 'child.id' or out of bounds [${childIndex}]`
+                    );
+                }
+                const childResponse = await this.childDaps[
+                    childIndex
+                ].customRequest('readMemory', args);
+                response.body = childResponse.body;
+                this.sendResponse(response);
+            } catch (err) {
+                this.sendErrorResponse(
+                    response,
+                    1,
+                    err instanceof Error ? err.message : String(err)
+                );
+            }
         } else if (
             command === 'cdt-amalgamator/resumeAll' ||
             command === 'cdt-amalgamator/suspendAll'
