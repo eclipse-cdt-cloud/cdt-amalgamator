@@ -1,6 +1,9 @@
 # Eclipse CDT Debug Adapter Amalgamator
 
-This is a debug adapter that allows common control over multiple debug adapters simulataneously,
+The Eclipse CDT Debug Adapter Amalgamator was a proof of concept and has now been archived.
+Please see the [discussion in Issue #22](https://github.com/eclipse-cdt-cloud/cdt-amalgamator/issues/22) for additional details.
+
+This is a debug adapter that allows common control over multiple debug adapters simultaneously,
 amalgamating their outputs to provide to VSCode a single Debug Adapter interface.
 
 ## Using the Amalgamator
@@ -18,7 +21,7 @@ The amalgamator is not published and can be run within a VS Code debug session.
 -   Update the paths to `cdt-gdb-adapter/dist/debugAdapter.js` in the sample workspace's `launch.json`
 -   In the _Extension Development Host_ launch the `Amalgamator Example`
 -   Debug the two processes, e.g.
-    -   step the processes indpe
+    -   step the processes independently
     -   observe variables in different processes
     -   examine memory with the memory browser (`Ctrl+Shift-P` -> _GDB: Open Memory Browser_)
 
